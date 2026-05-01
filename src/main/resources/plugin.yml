@@ -1,0 +1,14 @@
+name: NomadSMP-Core
+version: 1.0.0
+main: com.nomadsmp.core.NomadCore
+api-version: "26.1"
+depend: [FastAsyncWorldEdit]
+commands:
+  nomad:
+    description: Admin command for NomadSMP-Core
+    permission: nomad.admin
+    usage: /nomad <reload|status|migratenow|setbuff <id>|sethome>
+permissions:
+  nomad.admin:
+    description: Full admin access to NomadSMP commands
+    default: op
