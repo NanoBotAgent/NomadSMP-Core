@@ -2,7 +2,7 @@ name: NomadSMP-Core
 version: 1.0.0
 main: com.nomadsmp.core.NomadCore
 api-version: "26.1"
-depend: [FastAsyncWorldEdit]
+depend: [WorldEdit]
 commands:
   nomad:
     description: Admin command for NomadSMP-Core
