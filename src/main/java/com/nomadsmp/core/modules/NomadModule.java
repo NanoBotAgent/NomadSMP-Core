@@ -79,11 +79,12 @@ public class NomadModule {
                     BlockVector3 min = BlockVector3.at(oldHome.getBlockX() - radius, oldHome.getBlockY() - radius, oldHome.getBlockZ() - radius);
                     BlockVector3 max = BlockVector3.at(oldHome.getBlockX() + radius, oldHome.getBlockY() + radius, oldHome.getBlockZ() + radius);
                     CuboidRegion region = new CuboidRegion(weWorld, min, max);
-                    com.sk89q.worldedit.function.operation.Operation op = session.copy(region, BlockVector3.at(newLoc.getBlockX() - radius, newLoc.getBlockY() - radius, newLoc.getBlockZ() - radius));
-                    com.sk89q.worldedit.function.operation.Operations.complete(op);
+                    BlockVector3 dest = BlockVector3.at(newLoc.getBlockX() - radius, newLoc.getBlockY() - radius, newLoc.getBlockZ() - radius);
+                    session.clone(region, region, dest);
+                    session.flushSession();
                 }
             } catch (Exception e) {
-                plugin.getLogger().severe("FAWE migration failed for " + uuid + ": " + e.getMessage());
+                plugin.getLogger().severe("WorldEdit migration failed for " + uuid + ": " + e.getMessage());
                 continue;
             }
 
