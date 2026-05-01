@@ -15,13 +15,13 @@ java {
 repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/")
-    maven("https://mvn-repo.arcticd.dev/snapshots/")
+    maven("https://ci.enginehub.org/repo/")
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:26.1.2-R0.1-SNAPSHOT")
-    compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Core:2.12.0-SNAPSHOT")
-    compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Bukkit:2.12.0-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:26.1.2.build.+")
+    compileOnly("com.sk89q.worldedit:worldedit-core:7.3.0")
+    compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.3.0")
 }
 
 tasks.shadowJar {
