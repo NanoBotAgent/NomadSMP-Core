@@ -3,102 +3,135 @@ package com.nomadsmp.core.modules;
 import com.nomadsmp.core.NomadCore;
 import com.nomadsmp.core.utils.HomeStorage;
 import com.nomadsmp.core.utils.SafeLocationFinder;
+import com.sk89q.worldedit.WorldEdit;
+import com.sk89q.worldedit.WorldEditException;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
+import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
+import com.sk89q.worldedit.extent.clipboard.Clipboard;
+import com.sk89q.worldedit.extent.clipboard.io.BuiltInClipboardFormat;
+import com.sk89q.worldedit.extent.clipboard.io.ClipboardWriter;
+import com.sk89q.worldedit.function.operation.Operation;
+import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.CuboidRegion;
-import com.sk89q.worldedit.WorldEdit;
-import com.sk89q.worldedit.EditSession;
-
+import com.sk89q.worldedit.session.ClipboardHolder;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 
 public class NomadModule {
+
     private final NomadCore plugin;
-    private int taskId;
-    private boolean warned = false;
+    private int taskId = -1;
 
-    public NomadModule(NomadCore plugin) { this.plugin = plugin; }
-
-    public void enable() {
-        taskId = Bukkit.getScheduler().runTaskTimer(plugin, this::check, 0L, 6000L).getTaskId();
+    public NomadModule(NomadCore plugin) {
+        this.plugin = plugin;
     }
 
-    public void disable() { Bukkit.getScheduler().cancelTask(taskId); }
+    public void enable() {
+        // Check every 5 minutes if it is migration time
+        taskId = Bukkit.getScheduler().runTaskTimer(plugin, this::checkMigration, 6000L, 6000L).getTaskId();
+    }
 
-    private void check() {
-        DayOfWeek today = LocalDate.now().getDayOfWeek();
-        int hour = LocalTime.now().getHour();
-        DayOfWeek target = plugin.cfg().getMigrateDay();
-        int targetHour = plugin.cfg().getMigrateHour();
+    public void disable() {
+        if (taskId != -1) {
+            Bukkit.getScheduler().cancelTask(taskId);
+            taskId = -1;
+        }
+    }
 
-        if (today == target && hour == targetHour) {
-            if (!warned) {
-                warned = true;
-                Bukkit.broadcastMessage("\u00a7c\u00a7l\u26a0 THE WORLD SHIFTS IN 5 MINUTES. \u26a0 \u00a7r\u00a7ePrepare your home!");
-                Bukkit.getScheduler().runTaskLater(plugin, this::runMigration, 6000L);
-            }
-        } else {
-            warned = false;
+    private void checkMigration() {
+        var config = plugin.getConfigManager();
+        var now = java.time.LocalDateTime.now();
+        if (now.getDayOfWeek() == config.getMigrateDay() && now.getHour() == config.getMigrateHour()) {
+            // 5-minute warning
+            Bukkit.broadcastMessage("\u00a7c\u00a7l\u26a0 THE WORLD SHIFTS IN 5 MINUTES. \u26a0 \u00a7r\u00a7ePrepare your home!");
+            // Schedule actual migration 5 minutes later
+            Bukkit.getScheduler().runTaskLater(plugin, this::runMigration, 6000L); // 5 min = 6000 ticks
         }
     }
 
     public void runMigration() {
-        int borderSize = plugin.cfg().getBorderHalfSize();
-        Random rng = new Random();
-        HomeStorage storage = plugin.homes();
+        var config = plugin.getConfigManager();
+        HomeStorage storage = plugin.getHomeStorage();
+        Map<UUID, Location> homes = storage.getAllHomes();
         World world = Bukkit.getWorlds().getFirst();
+        Random random = new Random();
+        int radius = config.getBorderHalfSize();
 
-        Bukkit.broadcastMessage("\u00a78[\u00a76NomadSMP\u00a78] \u00a7eThe world shifts! Finding new homes...");
+        Bukkit.broadcastMessage("\u00a78[\u00a76NomadSMP\u00a78] \u00a7eThe world shifts! Homes are migrating...");
 
-        for (Map.Entry<UUID, Location> entry : storage.getAllHomes().entrySet()) {
+        for (Map.Entry<UUID, Location> entry : homes.entrySet()) {
             UUID uuid = entry.getKey();
             Location oldHome = entry.getValue();
 
-            int nx = rng.nextInt(borderSize * 2) - borderSize;
-            int nz = rng.nextInt(borderSize * 2) - borderSize;
-            Location newLoc = SafeLocationFinder.findSafe(world, nx, nz);
+            // Find a safe new location
+            Location newHome = null;
+            for (int attempt = 0; attempt < 10; attempt++) {
+                int nx = random.nextInt(radius * 2) - radius;
+                int nz = random.nextInt(radius * 2) - radius;
+                newHome = SafeLocationFinder.findSafe(world, nx, nz);
+                if (newHome != null) break;
+            }
 
-            if (newLoc == null) {
-                plugin.getLogger().warning("Could not find safe location for " + uuid);
+            if (newHome == null) {
+                plugin.getLogger().warning("Could not find safe location for " + uuid + ", skipping.");
                 continue;
             }
 
-            int radius = plugin.cfg().getHouseRadius();
+            // Copy and paste the house using WorldEdit
+            int r = config.getHouseRadius();
             try {
-                com.sk89q.worldedit.world.World weWorld = BukkitAdapter.adapt(world);
-                try (EditSession session = WorldEdit.getInstance().newEditSession(weWorld)) {
-                    BlockVector3 min = BlockVector3.at(oldHome.getBlockX() - radius, oldHome.getBlockY() - radius, oldHome.getBlockZ() - radius);
-                    BlockVector3 max = BlockVector3.at(oldHome.getBlockX() + radius, oldHome.getBlockY() + radius, oldHome.getBlockZ() + radius);
-                    CuboidRegion region = new CuboidRegion(weWorld, min, max);
-                    BlockVector3 dest = BlockVector3.at(newLoc.getBlockX() - radius, newLoc.getBlockY() - radius, newLoc.getBlockZ() - radius);
-                    session.clone(region, region, dest);
-                    session.flushSession();
-                }
+                copyPasteSchematic(oldHome, newHome, r);
             } catch (Exception e) {
-                plugin.getLogger().severe("WorldEdit migration failed for " + uuid + ": " + e.getMessage());
+                plugin.getLogger().severe("Failed to migrate house for " + uuid + ": " + e.getMessage());
                 continue;
             }
 
-            storage.setHome(uuid, newLoc);
+            // Update home storage
+            storage.setHome(uuid, newHome);
 
-            Player online = Bukkit.getPlayer(uuid);
-            if (online != null) {
-                Bukkit.getScheduler().runTask(plugin, () -> {
-                    online.teleport(newLoc);
-                    online.sendMessage("\u00a78[\u00a76NomadSMP\u00a78] \u00a7eYour home has migrated to a new location!");
-                });
+            // Teleport online player
+            Player player = Bukkit.getPlayer(uuid);
+            if (player != null && player.isOnline()) {
+                player.teleport(newHome);
+                player.sendMessage("\u00a78[\u00a76NomadSMP\u00a78] \u00a7eYour home has migrated to a new location!");
             }
         }
 
-        Bukkit.broadcastMessage("\u00a78[\u00a76NomadSMP\u00a78] \u00a7aMigration complete! New homes assigned.");
+        Bukkit.broadcastMessage("\u00a78[\u00a76NomadSMP\u00a78] \u00a7aMigration complete! Find your new home.");
+    }
+
+    private void copyPasteSchematic(Location from, Location to, int radius) throws WorldEditException {
+        var worldEdit = WorldEdit.getInstance();
+        var weWorld = BukkitAdapter.adapt(from.getWorld());
+
+        // Define source region
+        BlockVector3 min = BlockVector3.at(from.getBlockX() - radius, from.getWorld().getMinHeight(), from.getBlockZ() - radius);
+        BlockVector3 max = BlockVector3.at(from.getBlockX() + radius, from.getWorld().getMaxHeight(), from.getBlockZ() + radius);
+        CuboidRegion region = new CuboidRegion(weWorld, min, max);
+
+        // Copy to clipboard
+        BlockArrayClipboard clipboard = new BlockArrayClipboard(region);
+        clipboard.setOrigin(BlockVector3.at(from.getBlockX(), from.getBlockY(), from.getBlockZ()));
+        var forward = clipboard.getRegion().iterator();
+        var source = weWorld.getBlockDistribution();
+
+        // Use WorldEdit operations
+        var editSession = worldEdit.newEditSession(weWorld);
+        var clipboardHolder = new ClipboardHolder(clipboard);
+        Operation operation = clipboardHolder.createPaste(editSession)
+                .to(BlockVector3.at(to.getBlockX(), to.getBlockY(), to.getBlockZ()))
+                .copyEntities(false)
+                .copyBiomes(true)
+                .build();
+        Operations.complete(operation);
+        editSession.close();
     }
 }
