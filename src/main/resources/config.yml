@@ -1,49 +1,101 @@
 # ─────────────────────────────────────────────
 # NomadSMP-Core Configuration
-# Restart or /nomad reload to apply changes
+# /nomad reload to apply changes without restart
 # ─────────────────────────────────────────────
 
 nomad-system:
   enabled: true
-  migrate-day: MONDAY # DayOfWeek enum value
-  migrate-hour: 0 # 24h clock (midnight = 0)
-  house-radius: 16 # Half-width of the schematic box saved per player
-  border-half-size: 250 # World border is 2x this (500x500 total)
-  safe-land-check: true # Abort paste if Y < 60 or over liquid
+  migrate-day: MONDAY
+  migrate-hour: 0                # 24h clock (0 = midnight)
+  house-radius: 16               # Half-width of the schematic box saved per player
+  safe-land-check: true          # Abort paste if Y < 60 or over liquid
 
 daily-buffs:
   enabled: true
-  # Fixed schedule (use buff IDs 1-50, see BUFF REFERENCE in docs)
-  monday: [2] # Power Miner
-  tuesday: [3] # Roadrunner
-  wednesday: [1] # Titanium (Unbreakable)
-  thursday: [2] # Power Miner
-  friday: [3] # Roadrunner
-  # Weekend is seeded-random from weekend-pool list
-  weekend-pool: [1, 2, 3, 4, 5, 6, 7, 8]
   broadcast-on-join: true
-  broadcast-color: "§6"
+  broadcast-color: "\u00a76"     # Color code for broadcast messages
+
+  # Each day can have one of three modes:
+  #   fixed   — always use the buff IDs listed in "buffs"
+  #   random  — pick from "pool" using the date as seed (same buff all day)
+  #   off     — no buff on this day
+  monday:
+    mode: fixed
+    buffs: [2]                   # Power Miner
+    pool: []                     # Only used when mode is random
+  tuesday:
+    mode: fixed
+    buffs: [3]                   # Roadrunner
+    pool: []
+  wednesday:
+    mode: fixed
+    buffs: [1]                   # Titanium
+    pool: []
+  thursday:
+    mode: fixed
+    buffs: [2]                   # Power Miner
+    pool: []
+  friday:
+    mode: fixed
+    buffs: [3]                   # Roadrunner
+    pool: []
+  saturday:
+    mode: random
+    buffs: []
+    pool: [1, 2, 3, 4, 5, 6, 7, 8]
+  sunday:
+    mode: random
+    buffs: []
+    pool: [1, 2, 3, 4, 5, 6, 7, 8]
+
+  # How many buffs to pick when mode is random (1 = single buff, 2 = two buffs, etc.)
+  random-count: 1
 
 progression-lock:
   enabled: true
   end-locked: true
-  end-unlock-days: 30 # Days since world creation before End portal activates
+  end-unlock-days: 30            # Days since server-start-date before End portal activates
+  server-start-date: "2025-01-01" # ISO date (YYYY-MM-DD)
   netherite-crafting-banned: true
-  netherite-equip-punish: true # Give Slowness V for 5s if Netherite armor is worn
-  block-gamemode-command: true # Block /gamemode, /give, /op for everyone including console
+  netherite-equip-punish: true   # Slowness V for 5s if Netherite armor is worn
+  block-gamemode-command: true   # Block /gamemode, /give, /op for everyone
   block-give-command: true
 
 anti-cheat:
   enabled: true
   block-seed-command: true
-  scramble-structure-seeds: true # Offsets structure seeds in Paper world config at startup
-  ore-obfuscation: true # Uses Paper engine-mode 2 obfuscation
+  scramble-structure-seeds: true
+  ore-obfuscation: true
 
 social:
   enabled: true
-  world-border: true
+  world-border:
+    enabled: true
+    size: 500                    # Total diameter (500 = 500x500 world border)
+    center-x: 0                  # Center X coordinate
+    center-z: 0                  # Center Z coordinate
+    damage-amount: 0.5           # Damage per tick outside border
+    warning-distance: 10         # Blocks inside border to show warning
   disable-tpa: true
   disable-warp: true
-  disable-home-command: true # /home and /sethome are blocked
-  player-head-drop: true # 100% chance on PvP kill
-  no-admin-op: true # Strips OP from all players on startup if block-gamemode-command is true
+  disable-home-command: true     # /home and /sethome are blocked
+  player-head-drop: true         # 100% chance on PvP kill
+  no-admin-op: true              # Strips OP from all players on startup
+
+# ─────────────────────────────────────────────
+# BUFF REFERENCE (IDs 1-50)
+# ─────────────────────────────────────────────
+#  1 Titanium       2 Power Miner    3 Roadrunner      4 Featherweight
+#  5 Iron Lung      6 Pyro           7 Night Owl       8 Looter
+#  9 Bountiful      10 Lucky Fisher  11 Magnet         12 Chef
+# 13 Blacksmith     14 Timber        15 Vein Miner     16 Trophy Hunter
+# 17 Dolphin        18 Gravity       19 Vampire        20 XP Junkie
+# 21 Merchant       22 Tank          23 Glass Cannon   24 Archer
+# 25 Librarian      26 Ninja         27 Spider         28 Ender
+# 29 Healthy        30 Medic         31 Sonic          32 Rich
+# 33 Scavenger      34 Glowstick     35 Gardener       36 Snowman
+# 37 Friendly       38 Slimy         39 Thor           40 Teleporter
+# 41 Parachute      42 Unstoppable   43 Warrior        44 Inertia
+# 45 Gravity Well   46 Alchemist     47 Builder        48 Double Jump
+# 49 Whale          50 Pacifist
+# ─────────────────────────────────────────────
