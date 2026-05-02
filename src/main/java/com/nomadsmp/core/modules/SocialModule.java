@@ -16,16 +16,17 @@ public class SocialModule {
     public void enable() {
         var config = plugin.getConfigManager();
 
-        // Set world border
-        if (config.isWorldBorder()) {
+        // Set world border from config
+        if (config.isWorldBorderEnabled()) {
             World world = Bukkit.getWorlds().getFirst();
             WorldBorder border = world.getWorldBorder();
-            border.setCenter(0, 0);
-            int size = config.getBorderHalfSize() * 2;
-            border.setSize(size);
-            border.setDamageAmount(0.5);
-            border.setWarningDistance(10);
-            plugin.getLogger().info("World border set to " + size + "x" + size);
+            border.setCenter(config.getWorldBorderCenterX(), config.getWorldBorderCenterZ());
+            border.setSize(config.getWorldBorderSize());
+            border.setDamageAmount(config.getWorldBorderDamageAmount());
+            border.setWarningDistance(config.getWorldBorderWarningDistance());
+            plugin.getLogger().info("World border set to " + config.getWorldBorderSize()
+                + "x" + config.getWorldBorderSize()
+                + " centered at " + config.getWorldBorderCenterX() + "," + config.getWorldBorderCenterZ());
         }
 
         // Strip OP on startup
