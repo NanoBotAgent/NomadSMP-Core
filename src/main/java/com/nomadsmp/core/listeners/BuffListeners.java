@@ -1,6 +1,7 @@
 package com.nomadsmp.core.listeners;
 
 import com.nomadsmp.core.NomadCore;
+import com.nomadsmp.core.config.ConfigManager;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
@@ -39,16 +40,16 @@ public class BuffListeners implements Listener {
         this.plugin = plugin;
         magnetTaskId = Bukkit.getScheduler().runTaskTimer(plugin, this::magnetTick, 4L, 4L).getTaskId();
         gravityWellTaskId = Bukkit.getScheduler().runTaskTimer(plugin, this::gravityWellTick, 10L, 10L).getTaskId();
-        // Inertia (buff 44): continuously zero knockback velocity for recently-hit players
         inertiaTaskId = Bukkit.getScheduler().runTaskTimer(plugin, this::inertiaTick, 1L, 1L).getTaskId();
     }
 
     private boolean isActive(int id) { return plugin.getDailyBuffModule().isBuffActive(id); }
+    private ConfigManager cfg() { return plugin.getConfigManager(); }
 
-    // Buff 1: Titanium — no durability loss
+    // Buff 1: Titanium
     @EventHandler
     public void onItemDamage(PlayerItemDamageEvent event) {
-        if (isActive(1)) event.setCancelled(true);
+        if (isActive(1) && cfg().getBuffBool("titanium-durability-cancel", true)) event.setCancelled(true);
     }
 
     // Buff 8: Looter, 19: Vampire, 32: Rich
@@ -58,17 +59,19 @@ public class BuffListeners implements Listener {
         if (killer == null) return;
 
         if (isActive(8)) {
-            List<ItemStack> extra = new ArrayList<>();
-            for (ItemStack drop : event.getDrops()) extra.add(drop.clone());
-            event.getDrops().addAll(extra);
+            int mult = cfg().getLooterMultiplier();
+            List<ItemStack> original = new ArrayList<>(event.getDrops());
+            for (int i = 1; i < mult; i++) {
+                for (ItemStack drop : original) event.getDrops().add(drop.clone());
+            }
         }
 
         if (isActive(19)) {
             double maxHealth = killer.getAttribute(Attribute.MAX_HEALTH).getValue();
-            killer.setHealth(Math.min(killer.getHealth() + 1.0, maxHealth));
+            killer.setHealth(Math.min(killer.getHealth() + cfg().getVampireHeal(), maxHealth));
         }
 
-        if (isActive(32) && Math.random() < 0.1) {
+        if (isActive(32) && Math.random() < cfg().getRichNuggetChance()) {
             event.getDrops().add(new ItemStack(Material.GOLD_NUGGET));
         }
     }
@@ -76,17 +79,19 @@ public class BuffListeners implements Listener {
     // Buff 9: Bountiful Harvest
     @EventHandler
     public void onBlockGrow(BlockGrowEvent event) {
-        if (!isActive(9)) return;
-        Block block = event.getBlock();
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            try { block.applyBoneMeal(BlockFace.UP); } catch (Exception ignored) {}
-        }, 1L);
+        if (isActive(9) && cfg().getBuffBool("bountiful-growth-boost", true)) {
+            Block block = event.getBlock();
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                try { block.applyBoneMeal(BlockFace.UP); } catch (Exception ignored) {}
+            }, 1L);
+        }
     }
 
     // Buff 12: Chef
     @EventHandler
     public void onFoodLevelChange(FoodLevelChangeEvent event) {
-        if (isActive(12) && event.getFoodLevel() < event.getEntity().getFoodLevel()) {
+        if (isActive(12) && cfg().getBuffBool("chef-cancel-hunger", true)
+                && event.getFoodLevel() < event.getEntity().getFoodLevel()) {
             event.setCancelled(true);
         }
     }
@@ -94,7 +99,7 @@ public class BuffListeners implements Listener {
     // Buff 13: Blacksmith
     @EventHandler
     public void onBlockDropItem(BlockDropItemEvent event) {
-        if (!isActive(13)) return;
+        if (!isActive(13) || !cfg().getBuffBool("blacksmith-auto-smelt", true)) return;
         Map<Material, Material> smelting = Map.of(
             Material.RAW_IRON, Material.IRON_INGOT,
             Material.RAW_GOLD, Material.GOLD_INGOT,
@@ -111,25 +116,23 @@ public class BuffListeners implements Listener {
     public void onBlockBreak(BlockBreakEvent event) {
         Block block = event.getBlock();
         if (isActive(14) && Tag.LOGS.isTagged(block.getType())) {
-            bfsBreak(block, block.getType(), 50, event.getPlayer());
+            bfsBreak(block, block.getType(), cfg().getTimberMax(), event.getPlayer());
         }
         if (isActive(15) && block.getType().name().endsWith("_ORE")) {
-            bfsBreak(block, block.getType(), 32, event.getPlayer());
+            bfsBreak(block, block.getType(), cfg().getVeinMinerMax(), event.getPlayer());
         }
     }
 
     private void bfsBreak(Block start, Material target, int maxBlocks, Player player) {
         Set<Block> visited = new HashSet<>();
         Queue<Block> queue = new LinkedList<>();
-        queue.add(start);
-        visited.add(start);
+        queue.add(start); visited.add(start);
         while (!queue.isEmpty() && visited.size() < maxBlocks) {
             Block current = queue.poll();
             for (BlockFace face : BlockFace.values()) {
                 Block neighbor = current.getRelative(face);
                 if (!visited.contains(neighbor) && neighbor.getType() == target) {
-                    visited.add(neighbor);
-                    queue.add(neighbor);
+                    visited.add(neighbor); queue.add(neighbor);
                 }
             }
         }
@@ -138,19 +141,36 @@ public class BuffListeners implements Listener {
         }
     }
 
+    // Buff 33: Scavenger
+    @EventHandler(priority = EventPriority.NORMAL)
+    public void onScavengerBreak(BlockBreakEvent event) {
+        if (!isActive(33)) return;
+        Material type = event.getBlock().getType();
+        if (type == Material.GRASS_BLOCK || type == Material.SHORT_GRASS) {
+            if (Math.random() < cfg().getScavengerChance()) {
+                List<Material> loot = cfg().getScavengerLoot();
+                if (loot.isEmpty()) loot = List.of(Material.STRING, Material.WHEAT_SEEDS, Material.POPPY);
+                event.getBlock().getWorld().dropItemNaturally(
+                    event.getBlock().getLocation(),
+                    new ItemStack(loot.get((int)(Math.random() * loot.size())))
+                );
+            }
+        }
+    }
+
     // Buff 20: XP Junkie
     @EventHandler
     public void onExpChange(PlayerExpChangeEvent event) {
-        if (isActive(20)) event.setAmount(event.getAmount() * 2);
+        if (isActive(20)) event.setAmount(event.getAmount() * cfg().getXpMultiplier());
     }
 
-    // Buff 23: Glass Cannon (damage dealt), 39: Thor, 50: Pacifist
+    // Buff 23: Glass Cannon, 39: Thor, 50: Pacifist
     @EventHandler
     public void onDamageByEntity(EntityDamageByEntityEvent event) {
         if (isActive(23) && event.getDamager() instanceof Player) {
-            event.setDamage(event.getDamage() * 2);
+            event.setDamage(event.getDamage() * cfg().getGlassCannonDealt());
         }
-        if (isActive(39) && event.getDamager() instanceof Player && Math.random() < 0.05) {
+        if (isActive(39) && event.getDamager() instanceof Player && Math.random() < cfg().getThorChance()) {
             event.getEntity().getWorld().strikeLightning(event.getEntity().getLocation());
         }
         if (isActive(50) && event.getDamager() instanceof Player player) {
@@ -160,22 +180,23 @@ public class BuffListeners implements Listener {
         }
     }
 
-    // Buff 23 (damage taken), 28 (ender pearl fall), 36 (fire immune), 38 (slimy bounce), 42 (wither immune), 44 (inertia)
+    // Buff 23 (taken), 28, 36, 38, 42, 44
     @EventHandler
     public void onEntityDamage(EntityDamageEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
 
-        if (isActive(23)) event.setDamage(event.getDamage() * 2);
+        if (isActive(23)) event.setDamage(event.getDamage() * cfg().getGlassCannonTaken());
 
         if (isActive(28) && event.getCause() == EntityDamageEvent.DamageCause.FALL) {
             Long t = pearlTimeMap.get(player.getUniqueId());
-            if (t != null && System.currentTimeMillis() - t < 1000) {
+            if (t != null && System.currentTimeMillis() - t < cfg().getEnderPearlWindowMs()) {
                 event.setCancelled(true);
                 pearlTimeMap.remove(player.getUniqueId());
             }
         }
 
-        if (isActive(36) && (event.getCause() == EntityDamageEvent.DamageCause.FIRE
+        if (isActive(36) && cfg().getBuffBool("snowman-snow-trail", true)
+                && (event.getCause() == EntityDamageEvent.DamageCause.FIRE
                 || event.getCause() == EntityDamageEvent.DamageCause.FIRE_TICK
                 || event.getCause() == EntityDamageEvent.DamageCause.LAVA)) {
             event.setCancelled(true);
@@ -183,36 +204,33 @@ public class BuffListeners implements Listener {
 
         if (isActive(38) && event.getCause() == EntityDamageEvent.DamageCause.FALL) {
             event.setCancelled(true);
-            player.setVelocity(player.getVelocity().setY(player.getFallDistance() * 0.05));
+            player.setVelocity(player.getVelocity().setY(player.getFallDistance() * cfg().getSlimyBounceMultiplier()));
         }
 
         if (isActive(42) && event.getCause() == EntityDamageEvent.DamageCause.WITHER) {
             event.setCancelled(true);
         }
 
-        // Buff 44: Inertia — mark player so inertiaTick cancels their knockback velocity
-        if (isActive(44)) {
-            inertiaPlayers.add(player.getUniqueId());
-        }
+        if (isActive(44)) inertiaPlayers.add(player.getUniqueId());
     }
 
     // Buff 25: Librarian
     @EventHandler
     public void onEnchant(EnchantItemEvent event) {
-        if (isActive(25)) event.setExpLevelCost(1);
+        if (isActive(25)) event.setExpLevelCost(cfg().getLibrarianCost());
     }
 
-    // Buff 27: Spider (wall climb), 36: Snowman trail, 48: Double Jump reset
+    // Buff 27: Spider, 36: Snowman trail, 48: Double Jump reset
     @EventHandler
     public void onPlayerMove(PlayerMoveEvent event) {
         Player player = event.getPlayer();
         if (isActive(27) && player.isSneaking()) {
             Block beside = player.getLocation().getBlock().getRelative(player.getFacing());
             if (beside.getType().isSolid()) {
-                player.setVelocity(player.getVelocity().setY(0.3));
+                player.setVelocity(player.getVelocity().setY(cfg().getSpiderClimbVelocity()));
             }
         }
-        if (isActive(36)) {
+        if (isActive(36) && cfg().getBuffBool("snowman-snow-trail", true)) {
             Block prev = event.getFrom().getBlock();
             if (prev.getType() == Material.AIR && prev.getRelative(BlockFace.DOWN).getType().isSolid()) {
                 prev.setType(Material.SNOW);
@@ -223,23 +241,7 @@ public class BuffListeners implements Listener {
         }
     }
 
-    // Buff 33: Scavenger
-    @EventHandler
-    public void onScavengerBreak(BlockBreakEvent event) {
-        if (!isActive(33)) return;
-        Material type = event.getBlock().getType();
-        if (type == Material.GRASS_BLOCK || type == Material.SHORT_GRASS) {
-            if (Math.random() < 0.05) {
-                Material[] loot = {Material.STRING, Material.WHEAT_SEEDS, Material.POPPY, Material.DANDELION, Material.FEATHER};
-                event.getBlock().getWorld().dropItemNaturally(
-                    event.getBlock().getLocation(),
-                    new ItemStack(loot[(int)(Math.random() * loot.length)])
-                );
-            }
-        }
-    }
-
-    // Buff 35: Gardener — 3x3 bone meal
+    // Buff 35: Gardener
     @EventHandler
     public void onPlayerInteract(PlayerInteractEvent event) {
         if (!isActive(35) || event.getAction() != org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK) return;
@@ -247,8 +249,9 @@ public class BuffListeners implements Listener {
         if (item == null || item.getType() != Material.BONE_MEAL) return;
         Block target = event.getClickedBlock();
         if (target == null) return;
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dz = -1; dz <= 1; dz++) {
+        int r = cfg().getGardenerRadius();
+        for (int dx = -r; dx <= r; dx++) {
+            for (int dz = -r; dz <= r; dz++) {
                 Block relative = target.getRelative(dx, 0, dz);
                 try { relative.applyBoneMeal(BlockFace.UP); } catch (Exception ignored) {}
             }
@@ -261,8 +264,8 @@ public class BuffListeners implements Listener {
         if (!isActive(40) || !event.isSneaking()) return;
         Player player = event.getPlayer();
         Long lastUse = teleporterCooldowns.get(player.getUniqueId());
-        if (lastUse != null && System.currentTimeMillis() - lastUse < 10000) return;
-        Location target = player.getLocation().add(player.getLocation().getDirection().normalize().multiply(5));
+        if (lastUse != null && System.currentTimeMillis() - lastUse < cfg().getTeleporterCooldownMs()) return;
+        Location target = player.getLocation().add(player.getLocation().getDirection().normalize().multiply(cfg().getTeleporterDistance()));
         player.teleport(target);
         teleporterCooldowns.put(player.getUniqueId(), System.currentTimeMillis());
     }
@@ -271,10 +274,11 @@ public class BuffListeners implements Listener {
     @EventHandler
     public void onItemConsume(PlayerItemConsumeEvent event) {
         if (!isActive(46) || event.getItem().getType() != Material.POTION) return;
+        int mult = cfg().getAlchemistMultiplier();
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             for (PotionEffect effect : event.getPlayer().getActivePotionEffects()) {
                 event.getPlayer().addPotionEffect(new PotionEffect(
-                    effect.getType(), effect.getDuration() * 3, effect.getAmplifier(),
+                    effect.getType(), effect.getDuration() * mult, effect.getAmplifier(),
                     effect.isAmbient(), effect.hasParticles()
                 ));
             }
@@ -284,7 +288,7 @@ public class BuffListeners implements Listener {
     // Buff 47: Builder
     @EventHandler
     public void onBlockPlace(org.bukkit.event.block.BlockPlaceEvent event) {
-        if (isActive(47) && Math.random() < 0.2) {
+        if (isActive(47) && Math.random() < cfg().getBuilderRefundChance()) {
             ItemStack hand = event.getItemInHand();
             hand.setAmount(hand.getAmount() + 1);
         }
@@ -297,14 +301,14 @@ public class BuffListeners implements Listener {
         if (hasDoubleJumped.contains(event.getPlayer().getUniqueId())) return;
         event.setCancelled(true);
         event.getPlayer().setAllowFlight(false);
-        event.getPlayer().setVelocity(event.getPlayer().getVelocity().setY(0.8));
+        event.getPlayer().setVelocity(event.getPlayer().getVelocity().setY(cfg().getDoubleJumpVelocity()));
         hasDoubleJumped.add(event.getPlayer().getUniqueId());
     }
 
     // Buff 49: Whale
     @EventHandler
     public void onAirChange(EntityAirChangeEvent event) {
-        if (isActive(49) && event.getEntity() instanceof Player) {
+        if (isActive(49) && cfg().getBuffBool("whale-infinite-oxygen", true) && event.getEntity() instanceof Player) {
             event.setAmount(Integer.MAX_VALUE);
         }
     }
@@ -317,7 +321,7 @@ public class BuffListeners implements Listener {
         }
     }
 
-    // Player join — apply buffs
+    // Player join
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         plugin.getDailyBuffModule().applyToPlayer(event.getPlayer());
@@ -334,65 +338,54 @@ public class BuffListeners implements Listener {
         }
     }
 
-    // Player quit — cleanup
+    // Player quit
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         UUID uuid = event.getPlayer().getUniqueId();
-        teleporterCooldowns.remove(uuid);
-        hasDoubleJumped.remove(uuid);
-        pearlTimeMap.remove(uuid);
-        inertiaPlayers.remove(uuid);
+        teleporterCooldowns.remove(uuid); hasDoubleJumped.remove(uuid);
+        pearlTimeMap.remove(uuid); inertiaPlayers.remove(uuid);
     }
 
-    /**
-     * Inertia tick (buff 44): Cancel knockback velocity for recently-hit players.
-     * Since EntityKnockbackEvent doesn't exist in Paper 26.1.2, we detect
-     * high horizontal velocity after damage and zero it out.
-     */
     private void inertiaTick() {
-        if (!isActive(44)) {
-            inertiaPlayers.clear();
-            return;
-        }
+        if (!isActive(44)) { inertiaPlayers.clear(); return; }
+        double threshold = cfg().getInertiaThreshold();
         for (UUID uuid : Set.copyOf(inertiaPlayers)) {
             Player player = Bukkit.getPlayer(uuid);
             if (player != null && player.isOnline()) {
                 Vector vel = player.getVelocity();
-                // Knockback typically gives horizontal velocity > 0.3
-                if (Math.abs(vel.getX()) > 0.3 || Math.abs(vel.getZ()) > 0.3) {
-                    // Zero horizontal knockback, keep vertical (gravity/jumping)
+                if (Math.abs(vel.getX()) > threshold || Math.abs(vel.getZ()) > threshold) {
                     player.setVelocity(new Vector(0, vel.getY(), 0));
                     inertiaPlayers.remove(uuid);
                 }
-            } else {
-                inertiaPlayers.remove(uuid);
-            }
+            } else { inertiaPlayers.remove(uuid); }
         }
     }
 
-    // Magnet tick (buff 11)
     private void magnetTick() {
         if (!isActive(11)) return;
+        int range = cfg().getMagnetRange();
+        double strength = cfg().getMagnetStrength();
         for (Player player : Bukkit.getOnlinePlayers()) {
-            for (Entity entity : player.getNearbyEntities(5, 5, 5)) {
+            for (Entity entity : player.getNearbyEntities(range, range, range)) {
                 if (entity instanceof Item item) {
                     item.setVelocity(player.getLocation().toVector()
                         .subtract(item.getLocation().toVector())
-                        .normalize().multiply(0.5));
+                        .normalize().multiply(strength));
                 }
             }
         }
     }
 
-    // Gravity Well tick (buff 45)
     private void gravityWellTick() {
         if (!isActive(45)) return;
+        int range = cfg().getGravityWellRange();
+        double strength = cfg().getGravityWellStrength();
         for (Player player : Bukkit.getOnlinePlayers()) {
-            for (Entity entity : player.getNearbyEntities(5, 5, 5)) {
+            for (Entity entity : player.getNearbyEntities(range, range, range)) {
                 if (entity instanceof Monster monster && monster.getTarget() == player) {
                     monster.setVelocity(player.getLocation().toVector()
                         .subtract(monster.getLocation().toVector())
-                        .normalize().multiply(0.3));
+                        .normalize().multiply(strength));
                 }
             }
         }
