@@ -24,11 +24,12 @@ public class ProgressionLockModule {
     }
 
     public long getDaysSinceCreation() {
-        String startDate = plugin.getConfig().getString("server-start-date", "2025-01-01");
+        String startDate = plugin.getConfigManager().getServerStartDate();
         try {
             LocalDate start = LocalDate.parse(startDate);
             return ChronoUnit.DAYS.between(start, LocalDate.now());
         } catch (Exception e) {
+            plugin.getLogger().warning("Invalid server-start-date: " + startDate + ", using 0");
             return 0;
         }
     }
