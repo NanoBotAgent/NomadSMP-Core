@@ -31,7 +31,11 @@ public class ConfigManager {
     private String broadcastColor;
     private int randomCount;
     private int rolloverCheckSeconds;
+    private int durationHours;
+    private BuffStacking stacking;
     private DayConfig[] dayConfigs;
+
+    public enum BuffStacking { HIGHEST, ADDITIVE, REPLACE }
 
     // ─── Progression lock ───
     private boolean progressionLockEnabled;
@@ -65,7 +69,7 @@ public class ConfigManager {
     private boolean playerHeadDropEnabled;
     private boolean noAdminOpEnabled;
 
-    // ─── Per-buff section keys (1-titanium, 2-power-miner, etc.) ───
+    // ─── Per-buff section keys ───
     private static final String[] BUFF_KEYS = {
         "", "1-titanium", "2-power-miner", "3-roadrunner", "4-featherweight",
         "5-iron-lung", "6-pyro", "7-night-owl", "8-looter", "9-bountiful-harvest",
@@ -155,6 +159,12 @@ public class ConfigManager {
         broadcastColor = config.getString("daily-buffs.broadcast-color", "\u00a76");
         randomCount = config.getInt("daily-buffs.random-count", 1);
         rolloverCheckSeconds = config.getInt("daily-buffs.rollover-check-seconds", 60);
+        durationHours = config.getInt("daily-buffs.duration-hours", 0);
+        stacking = switch (config.getString("daily-buffs.stacking", "additive").toLowerCase()) {
+            case "highest" -> BuffStacking.HIGHEST;
+            case "replace" -> BuffStacking.REPLACE;
+            default -> BuffStacking.ADDITIVE;
+        };
 
         dayConfigs = new DayConfig[8];
         String[] dayNames = {"", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"};
@@ -174,7 +184,6 @@ public class ConfigManager {
             }
         }
 
-        // ─── Progression lock (sub-feature toggles) ───
         progressionLockEnabled = config.getBoolean("progression-lock.enabled", true);
         endLockEnabled = config.getBoolean("progression-lock.end-lock.enabled", true);
         endUnlockDays = config.getInt("progression-lock.end-lock.unlock-days", 30);
@@ -186,13 +195,11 @@ public class ConfigManager {
         blockGamemodeCommandEnabled = config.getBoolean("progression-lock.block-gamemode-command.enabled", true);
         blockGiveCommandEnabled = config.getBoolean("progression-lock.block-give-command.enabled", true);
 
-        // ─── Anti-cheat (sub-feature toggles) ───
         antiCheatEnabled = config.getBoolean("anti-cheat.enabled", true);
         blockSeedCommandEnabled = config.getBoolean("anti-cheat.block-seed-command.enabled", true);
         scrambleStructureSeedsEnabled = config.getBoolean("anti-cheat.scramble-structure-seeds.enabled", true);
         oreObfuscationEnabled = config.getBoolean("anti-cheat.ore-obfuscation.enabled", true);
 
-        // ─── Social (sub-feature toggles) ───
         socialEnabled = config.getBoolean("social.enabled", true);
         ConfigurationSection borderSec = config.getConfigurationSection("social.world-border");
         if (borderSec != null) {
@@ -230,6 +237,8 @@ public class ConfigManager {
     public String getBroadcastColor() { return broadcastColor; }
     public int getRandomCount() { return randomCount; }
     public int getRolloverCheckSeconds() { return rolloverCheckSeconds; }
+    public int getDurationHours() { return durationHours; }
+    public BuffStacking getStacking() { return stacking; }
     public DayConfig getDayConfig(DayOfWeek day) {
         int idx = day.getValue();
         return dayConfigs[idx] != null ? dayConfigs[idx] : new DayConfig(BuffMode.OFF, List.of(), List.of());
@@ -246,8 +255,6 @@ public class ConfigManager {
     public int getNetheritePunishAmplifier() { return netheritePunishAmplifier; }
     public boolean isBlockGamemodeCommandEnabled() { return blockGamemodeCommandEnabled; }
     public boolean isBlockGiveCommandEnabled() { return blockGiveCommandEnabled; }
-
-    // Legacy compatibility — old getter names map to new toggles
     public boolean isEndLocked() { return endLockEnabled; }
     public boolean isNetheriteCraftingBanned() { return netheriteCraftingBanEnabled; }
     public boolean isNetheriteEquipPunish() { return netheriteEquipPunishEnabled; }
@@ -259,8 +266,6 @@ public class ConfigManager {
     public boolean isBlockSeedCommandEnabled() { return blockSeedCommandEnabled; }
     public boolean isScrambleStructureSeedsEnabled() { return scrambleStructureSeedsEnabled; }
     public boolean isOreObfuscationEnabled() { return oreObfuscationEnabled; }
-
-    // Legacy compatibility
     public boolean isBlockSeedCommand() { return blockSeedCommandEnabled; }
     public boolean isScrambleStructureSeeds() { return scrambleStructureSeedsEnabled; }
     public boolean isOreObfuscation() { return oreObfuscationEnabled; }
@@ -278,8 +283,6 @@ public class ConfigManager {
     public boolean isDisableHomeCommandEnabled() { return disableHomeCommandEnabled; }
     public boolean isPlayerHeadDropEnabled() { return playerHeadDropEnabled; }
     public boolean isNoAdminOpEnabled() { return noAdminOpEnabled; }
-
-    // Legacy compatibility
     public boolean isDisableTpa() { return disableTpaEnabled; }
     public boolean isDisableWarp() { return disableWarpEnabled; }
     public boolean isDisableHomeCommand() { return disableHomeCommandEnabled; }

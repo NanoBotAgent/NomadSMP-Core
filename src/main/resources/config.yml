@@ -26,6 +26,10 @@ daily-buffs:
   broadcast-color: "\u00a76"
   rollover-check-seconds: 60
   random-count: 1
+  # How long buffs last per day (0 = all day until midnight rollover)
+  duration-hours: 0
+  # How same-type speed buffs combine: highest | additive | replace
+  stacking: additive
 
   # ─── Per-day schedule: mode = fixed | random | off ───
   monday:    { mode: fixed, buffs: [2], pool: [] }
@@ -45,7 +49,7 @@ daily-buffs:
       haste-amplifier: 0      # 0=Haste I, 1=Haste II, 2=Haste III, etc.
     3-roadrunner:
       enabled: true
-      speed-modifier: 0.12    # Movement speed attribute addition
+      speed-modifier: 0.12    # Walk speed addition (no FOV change)
     4-featherweight:
       enabled: true
       amplifier: 0            # 0=Slow Falling I, 1=Slow Falling II, etc.
@@ -87,7 +91,7 @@ daily-buffs:
       head-drop-chance: 1.0    # 0.0–1.0 chance for mob head
     17-dolphin:
       enabled: true
-      speed-modifier: 0.12    # Swim speed attribute addition
+      speed-modifier: 0.12    # Swim speed addition (no FOV change)
     18-gravity:
       enabled: true
       jump-amplifier: 1        # 0=Jump Boost I, 1=Jump Boost II, etc.
@@ -130,7 +134,7 @@ daily-buffs:
       regen-amplifier: 1       # 0=Regen I, 1=Regen II, etc.
     31-sonic:
       enabled: true
-      speed-modifier: 0.4      # Movement speed attribute addition
+      speed-modifier: 0.4      # Walk speed addition (no FOV change)
     32-rich:
       enabled: true
       nugget-chance: 0.1        # 0.0–1.0 gold nugget drop chance

@@ -5,7 +5,10 @@ import com.nomadsmp.core.config.ConfigManager;
 import com.nomadsmp.core.listeners.*;
 import com.nomadsmp.core.modules.*;
 import com.nomadsmp.core.utils.HomeStorage;
+import com.nomadsmp.core.utils.StatsManager;
+import com.nomadsmp.core.utils.BuffStateStorage;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class NomadCore extends JavaPlugin {
@@ -13,6 +16,8 @@ public class NomadCore extends JavaPlugin {
     private static NomadCore instance;
     private ConfigManager configManager;
     private HomeStorage homeStorage;
+    private StatsManager statsManager;
+    private BuffStateStorage buffStateStorage;
 
     // Modules
     private NomadModule nomadModule;
@@ -30,8 +35,10 @@ public class NomadCore extends JavaPlugin {
         configManager = new ConfigManager(this);
         configManager.load();
 
-        // Initialize home storage
+        // Initialize storage
         homeStorage = new HomeStorage(this);
+        statsManager = new StatsManager(this);
+        buffStateStorage = new BuffStateStorage(this);
 
         // Initialize modules
         nomadModule = new NomadModule(this);
@@ -57,7 +64,7 @@ public class NomadCore extends JavaPlugin {
             socialModule.enable();
         }
 
-        // Register listeners (each listener checks sub-feature toggles internally)
+        // Register listeners
         Bukkit.getPluginManager().registerEvents(new BuffListeners(this), this);
         Bukkit.getPluginManager().registerEvents(new ProgressionListeners(this), this);
         Bukkit.getPluginManager().registerEvents(new AntiCheatListeners(this), this);
@@ -73,7 +80,13 @@ public class NomadCore extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        if (dailyBuffModule != null) dailyBuffModule.disable();
+        // Save buff state for persistence across restarts
+        if (dailyBuffModule != null) {
+            buffStateStorage.save(dailyBuffModule.getCurrentBuffIds());
+            dailyBuffModule.disable();
+        }
+        // Save stats
+        if (statsManager != null) statsManager.save();
         if (nomadModule != null) nomadModule.disable();
         getLogger().info("NomadSMP-Core disabled.");
     }
@@ -87,9 +100,32 @@ public class NomadCore extends JavaPlugin {
         getLogger().info("NomadSMP-Core config reloaded.");
     }
 
+    // ─── Notification helpers ───
+
+    /** Broadcast a message to ALL online players (used for Buff of the Day changes). */
+    public void broadcastAll(String message) {
+        Bukkit.broadcastMessage(message);
+    }
+
+    /** Notify all online operators (used for non-buff config changes). */
+    public void notifyOps(String message) {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (player.hasPermission("nomad.admin")) {
+                player.sendMessage(message);
+            }
+        }
+    }
+
+    /** Notify only the operator who made the change (self-only). */
+    public void notifySelf(Player operator, String message) {
+        operator.sendMessage(message);
+    }
+
     public static NomadCore getInstance() { return instance; }
     public ConfigManager getConfigManager() { return configManager; }
     public HomeStorage getHomeStorage() { return homeStorage; }
+    public StatsManager getStatsManager() { return statsManager; }
+    public BuffStateStorage getBuffStateStorage() { return buffStateStorage; }
     public NomadModule getNomadModule() { return nomadModule; }
     public DailyBuffModule getDailyBuffModule() { return dailyBuffModule; }
     public ProgressionLockModule getProgressionLockModule() { return progressionLockModule; }
