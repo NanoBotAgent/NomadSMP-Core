@@ -8,36 +8,37 @@ nomad-system:
   migrate-day: MONDAY
   migrate-hour: 0                # 24h clock (0 = midnight)
   house-radius: 16               # Half-width of the schematic box saved per player
-  safe-land-check: true          # Abort paste if Y < 60 or over liquid
+  safe-land-check: true          # Abort paste if Y < min-safe-y
+  min-safe-y: 60                 # Minimum Y for safe paste location
+  migration-check-minutes: 5     # How often to check if it is migration time
+  migration-warning-minutes: 5   # How many minutes warning before migration
 
 daily-buffs:
   enabled: true
   broadcast-on-join: true
-  broadcast-color: "\u00a76"     # Color code for broadcast messages
+  broadcast-color: "\u00a76"
+  rollover-check-seconds: 60    # How often to check for midnight buff change
 
-  # Each day can have one of three modes:
-  #   fixed   — always use the buff IDs listed in "buffs"
-  #   random  — pick from "pool" using the date as seed (same buff all day)
-  #   off     — no buff on this day
+  # Each day: mode = fixed | random | off
   monday:
     mode: fixed
-    buffs: [2]                   # Power Miner
-    pool: []                     # Only used when mode is random
+    buffs: [2]
+    pool: []
   tuesday:
     mode: fixed
-    buffs: [3]                   # Roadrunner
+    buffs: [3]
     pool: []
   wednesday:
     mode: fixed
-    buffs: [1]                   # Titanium
+    buffs: [1]
     pool: []
   thursday:
     mode: fixed
-    buffs: [2]                   # Power Miner
+    buffs: [2]
     pool: []
   friday:
     mode: fixed
-    buffs: [3]                   # Roadrunner
+    buffs: [3]
     pool: []
   saturday:
     mode: random
@@ -48,17 +49,171 @@ daily-buffs:
     buffs: []
     pool: [1, 2, 3, 4, 5, 6, 7, 8]
 
-  # How many buffs to pick when mode is random (1 = single buff, 2 = two buffs, etc.)
+  # How many buffs to pick when mode is random
   random-count: 1
+
+  # ─── Per-buff tunables (all 30+ hardcoded values) ───
+  buff-settings:
+    # 1: Titanium
+    titanium-durability-cancel: true
+
+    # 2: Power Miner — Haste amplifier (0 = Haste I, 1 = Haste II)
+    power-miner-haste-amplifier: 0
+
+    # 3: Roadrunner — movement speed modifier (0.12 = ~12% faster)
+    roadrunner-speed-modifier: 0.12
+
+    # 4: Featherweight / 41: Parachute — just Slow Falling amplifier
+    featherweight-amplifier: 0
+
+    # 5: Iron Lung — Water Breathing amplifier
+    iron-lung-amplifier: 0
+
+    # 6: Pyro — Fire Resistance amplifier
+    pyro-amplifier: 0
+
+    # 7: Night Owl — Night Vision amplifier
+    night-owl-amplifier: 0
+
+    # 8: Looter — drop multiplier (2 = double, 3 = triple)
+    looter-drop-multiplier: 2
+
+    # 9: Bountiful Harvest
+    bountiful-growth-boost: true
+
+    # 10: Lucky Fisher — not yet implemented (listener-driven)
+    # 11: Magnet
+    magnet-range: 5               # Blocks to pull items from
+    magnet-strength: 0.5          # Pull velocity
+
+    # 12: Chef — cancel hunger drain
+    chef-cancel-hunger: true
+
+    # 13: Blacksmith — auto-smelt ores
+    blacksmith-auto-smelt: true
+
+    # 14: Timber
+    timber-max-blocks: 50         # Max logs broken per tree
+
+    # 15: Vein Miner
+    vein-miner-max-blocks: 32     # Max ores broken per vein
+
+    # 16: Trophy Hunter — mob head drop chance (0.0-1.0)
+    trophy-hunter-chance: 1.0
+
+    # 17: Dolphin — swim speed modifier
+    dolphin-speed-modifier: 0.12
+
+    # 18: Gravity — Jump Boost amplifier (1 = Jump II)
+    gravity-jump-amplifier: 1
+
+    # 19: Vampire — HP healed per kill
+    vampire-heal-amount: 1.0
+
+    # 20: XP Junkie — XP multiplier
+    xp-junkie-multiplier: 2
+
+    # 21: Merchant — villager discount fraction (0.5 = 50% off)
+    merchant-discount: 0.5
+
+    # 22: Tank — Resistance amplifier
+    tank-resistance-amplifier: 0
+
+    # 23: Glass Cannon
+    glass-cannon-damage-multiplier: 2.0
+    glass-cannon-damage-taken-multiplier: 2.0
+
+    # 24: Archer — free arrows
+    archer-free-arrows: true
+
+    # 25: Librarian — enchant cost in levels
+    librarian-enchant-cost: 1
+
+    # 26: Ninja — Invisibility amplifier
+    ninja-invisibility-amplifier: 0
+
+    # 27: Spider — wall climb
+    spider-climb-velocity: 0.3
+
+    # 28: Ender — pearl fall damage immunity window in ms
+    ender-pearl-window-ms: 1000
+
+    # 29: Healthy — extra hearts (2.0 = 1 heart, 10.0 = 5 hearts)
+    healthy-extra-hearts: 10.0
+
+    # 30: Medic — Regen amplifier (1 = Regen II)
+    medic-regen-amplifier: 1
+
+    # 31: Sonic — movement speed modifier
+    sonic-speed-modifier: 0.4
+
+    # 32: Rich — gold nugget drop chance (0.0-1.0)
+    rich-nugget-chance: 0.1
+
+    # 33: Scavenger
+    scavenger-chance: 0.05        # Drop chance per grass break
+    scavenger-loot: [STRING, WHEAT_SEEDS, POPPY, DANDELION, FEATHER]
+
+    # 34: Glowstick — Glowing amplifier
+    glowstick-amplifier: 0
+
+    # 35: Gardener — bone meal radius (1 = 3x3, 2 = 5x5)
+    gardener-radius: 1
+
+    # 36: Snowman — snow trail + fire immune
+    snowman-snow-trail: true
+
+    # 37: Friendly — peaceful mob attraction range
+    friendly-attraction-range: 5
+
+    # 38: Slimy — bounce velocity multiplier
+    slimy-bounce-multiplier: 0.05
+
+    # 39: Thor — lightning strike chance (0.0-1.0)
+    thor-lightning-chance: 0.05
+
+    # 40: Teleporter
+    teleporter-distance: 5        # Blocks to teleport forward
+    teleporter-cooldown-ms: 10000 # Cooldown in milliseconds
+
+    # 42: Unstoppable — immune causes (list of DamageCause names)
+    unstoppable-immune-causes: [WITHER, SLOW, BLINDNESS]
+
+    # 43: Warrior — Strength amplifier
+    warrior-strength-amplifier: 0
+
+    # 44: Inertia — horizontal velocity threshold to detect knockback
+    inertia-velocity-threshold: 0.3
+
+    # 45: Gravity Well
+    gravity-well-range: 5         # Pull range in blocks
+    gravity-well-strength: 0.3    # Pull velocity
+
+    # 46: Alchemist — potion duration multiplier
+    alchemist-duration-multiplier: 3
+
+    # 47: Builder — block refund chance (0.0-1.0)
+    builder-refund-chance: 0.2
+
+    # 48: Double Jump
+    double-jump-velocity: 0.8
+
+    # 49: Whale — infinite oxygen
+    whale-infinite-oxygen: true
+
+    # 50: Pacifist — Regen amplifier
+    pacifist-regen-amplifier: 3
 
 progression-lock:
   enabled: true
   end-locked: true
-  end-unlock-days: 30            # Days since server-start-date before End portal activates
-  server-start-date: "2025-01-01" # ISO date (YYYY-MM-DD)
+  end-unlock-days: 30
+  server-start-date: "2025-01-01"
   netherite-crafting-banned: true
-  netherite-equip-punish: true   # Slowness V for 5s if Netherite armor is worn
-  block-gamemode-command: true   # Block /gamemode, /give, /op for everyone
+  netherite-equip-punish: true
+  netherite-punish-duration-ticks: 100  # 100 ticks = 5 seconds
+  netherite-punish-amplifier: 4         # 4 = Slowness V
+  block-gamemode-command: true
   block-give-command: true
 
 anti-cheat:
@@ -71,16 +226,16 @@ social:
   enabled: true
   world-border:
     enabled: true
-    size: 500                    # Total diameter (500 = 500x500 world border)
-    center-x: 0                  # Center X coordinate
-    center-z: 0                  # Center Z coordinate
-    damage-amount: 0.5           # Damage per tick outside border
-    warning-distance: 10         # Blocks inside border to show warning
+    size: 500
+    center-x: 0
+    center-z: 0
+    damage-amount: 0.5
+    warning-distance: 10
   disable-tpa: true
   disable-warp: true
-  disable-home-command: true     # /home and /sethome are blocked
-  player-head-drop: true         # 100% chance on PvP kill
-  no-admin-op: true              # Strips OP from all players on startup
+  disable-home-command: true
+  player-head-drop: true
+  no-admin-op: true
 
 # ─────────────────────────────────────────────
 # BUFF REFERENCE (IDs 1-50)
