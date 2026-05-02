@@ -20,6 +20,7 @@ import org.bukkit.Material;
 import org.bukkit.Tag;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.util.Vector;
 
 import java.util.*;
 
@@ -29,13 +30,17 @@ public class BuffListeners implements Listener {
     private final Map<UUID, Long> teleporterCooldowns = new HashMap<>();
     private final Set<UUID> hasDoubleJumped = new HashSet<>();
     private final Map<UUID, Long> pearlTimeMap = new HashMap<>();
+    private final Set<UUID> inertiaPlayers = new HashSet<>();
     private int magnetTaskId = -1;
     private int gravityWellTaskId = -1;
+    private int inertiaTaskId = -1;
 
     public BuffListeners(NomadCore plugin) {
         this.plugin = plugin;
         magnetTaskId = Bukkit.getScheduler().runTaskTimer(plugin, this::magnetTick, 4L, 4L).getTaskId();
         gravityWellTaskId = Bukkit.getScheduler().runTaskTimer(plugin, this::gravityWellTick, 10L, 10L).getTaskId();
+        // Inertia (buff 44): continuously zero knockback velocity for recently-hit players
+        inertiaTaskId = Bukkit.getScheduler().runTaskTimer(plugin, this::inertiaTick, 1L, 1L).getTaskId();
     }
 
     private boolean isActive(int id) { return plugin.getDailyBuffModule().isBuffActive(id); }
@@ -46,7 +51,7 @@ public class BuffListeners implements Listener {
         if (isActive(1)) event.setCancelled(true);
     }
 
-    // Buff 8: Looter, 16: Trophy Hunter, 19: Vampire, 32: Rich
+    // Buff 8: Looter, 19: Vampire, 32: Rich
     @EventHandler
     public void onEntityDeath(EntityDeathEvent event) {
         Player killer = event.getEntity().getKiller();
@@ -72,7 +77,6 @@ public class BuffListeners implements Listener {
     @EventHandler
     public void onBlockGrow(BlockGrowEvent event) {
         if (!isActive(9)) return;
-        // Re-apply bone meal to accelerate growth
         Block block = event.getBlock();
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             try { block.applyBoneMeal(BlockFace.UP); } catch (Exception ignored) {}
@@ -106,11 +110,9 @@ public class BuffListeners implements Listener {
     @EventHandler(priority = EventPriority.HIGH)
     public void onBlockBreak(BlockBreakEvent event) {
         Block block = event.getBlock();
-        // Buff 14: Timber
         if (isActive(14) && Tag.LOGS.isTagged(block.getType())) {
             bfsBreak(block, block.getType(), 50, event.getPlayer());
         }
-        // Buff 15: Vein Miner
         if (isActive(15) && block.getType().name().endsWith("_ORE")) {
             bfsBreak(block, block.getType(), 32, event.getPlayer());
         }
@@ -158,7 +160,7 @@ public class BuffListeners implements Listener {
         }
     }
 
-    // Buff 23 (damage taken), 28 (ender pearl fall), 36 (fire immune), 38 (slimy bounce), 42 (wither immune)
+    // Buff 23 (damage taken), 28 (ender pearl fall), 36 (fire immune), 38 (slimy bounce), 42 (wither immune), 44 (inertia)
     @EventHandler
     public void onEntityDamage(EntityDamageEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
@@ -187,13 +189,10 @@ public class BuffListeners implements Listener {
         if (isActive(42) && event.getCause() == EntityDamageEvent.DamageCause.WITHER) {
             event.setCancelled(true);
         }
-    }
 
-    // Buff 44: Inertia — cancel knockback
-    @EventHandler
-    public void onKnockback(EntityKnockbackEvent event) {
-        if (isActive(44) && event.getEntity() instanceof Player) {
-            event.setCancelled(true);
+        // Buff 44: Inertia — mark player so inertiaTick cancels their knockback velocity
+        if (isActive(44)) {
+            inertiaPlayers.add(player.getUniqueId());
         }
     }
 
@@ -240,7 +239,7 @@ public class BuffListeners implements Listener {
         }
     }
 
-    // Buff 35: Gardener — 3x3 bone meal (MC 26.1.2: applyBoneMeal takes BlockFace)
+    // Buff 35: Gardener — 3x3 bone meal
     @EventHandler
     public void onPlayerInteract(PlayerInteractEvent event) {
         if (!isActive(35) || event.getAction() != org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK) return;
@@ -342,6 +341,33 @@ public class BuffListeners implements Listener {
         teleporterCooldowns.remove(uuid);
         hasDoubleJumped.remove(uuid);
         pearlTimeMap.remove(uuid);
+        inertiaPlayers.remove(uuid);
+    }
+
+    /**
+     * Inertia tick (buff 44): Cancel knockback velocity for recently-hit players.
+     * Since EntityKnockbackEvent doesn't exist in Paper 26.1.2, we detect
+     * high horizontal velocity after damage and zero it out.
+     */
+    private void inertiaTick() {
+        if (!isActive(44)) {
+            inertiaPlayers.clear();
+            return;
+        }
+        for (UUID uuid : Set.copyOf(inertiaPlayers)) {
+            Player player = Bukkit.getPlayer(uuid);
+            if (player != null && player.isOnline()) {
+                Vector vel = player.getVelocity();
+                // Knockback typically gives horizontal velocity > 0.3
+                if (Math.abs(vel.getX()) > 0.3 || Math.abs(vel.getZ()) > 0.3) {
+                    // Zero horizontal knockback, keep vertical (gravity/jumping)
+                    player.setVelocity(new Vector(0, vel.getY(), 0));
+                    inertiaPlayers.remove(uuid);
+                }
+            } else {
+                inertiaPlayers.remove(uuid);
+            }
+        }
     }
 
     // Magnet tick (buff 11)
