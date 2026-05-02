@@ -7,7 +7,6 @@ import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.WorldEditException;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
-import com.sk89q.worldedit.extent.clipboard.Clipboard;
 import com.sk89q.worldedit.function.operation.Operation;
 import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.math.BlockVector3;
@@ -108,11 +107,8 @@ public class NomadModule {
         clipboard.setOrigin(BlockVector3.at(from.getBlockX(), from.getBlockY(), from.getBlockZ()));
 
         // Copy blocks into clipboard
-        var forward = clipboard.getRegion().iterator();
-        var source = weWorld;
-        while (forward.hasNext()) {
-            var pos = forward.next();
-            clipboard.setBlock(pos, source.getBlock(pos));
+        for (var pos : region) {
+            clipboard.setBlock(pos, weWorld.getBlock(pos));
         }
 
         // Paste at new location
