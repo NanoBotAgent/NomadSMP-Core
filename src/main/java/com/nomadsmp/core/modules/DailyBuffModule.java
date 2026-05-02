@@ -17,7 +17,6 @@ public class DailyBuffModule {
     private List<Integer> currentBuffIds = new ArrayList<>();
     private int taskId = -1;
 
-    // Buff names for display
     public static final String[] BUFF_NAMES = {
         "", "Titanium", "Power Miner", "Roadrunner", "Featherweight", "Iron Lung",
         "Pyro", "Night Owl", "Looter", "Bountiful Harvest", "Lucky Fisher",
@@ -31,7 +30,6 @@ public class DailyBuffModule {
         "Alchemist", "Builder", "Double Jump", "Whale", "Pacifist"
     };
 
-    // Buff one-line descriptions
     public static final String[] BUFF_DESCS = {
         "", "No tool durability loss", "Haste I", "Speed boost", "Slow Falling",
         "Water Breathing", "Fire Resistance", "Night Vision", "2x mob drops",
@@ -51,19 +49,15 @@ public class DailyBuffModule {
         "Swords deal 0 damage + Regen IV"
     };
 
-    public DailyBuffModule(NomadCore plugin) {
-        this.plugin = plugin;
-    }
+    public DailyBuffModule(NomadCore plugin) { this.plugin = plugin; }
 
     public void enable() {
         updateDailyBuff();
-        // Check every 60 seconds for midnight roll-over
+        long checkTicks = plugin.getConfigManager().getRolloverCheckSeconds() * 20L;
         taskId = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
             var now = java.time.LocalTime.now();
-            if (now.getHour() == 0 && now.getMinute() == 0) {
-                updateDailyBuff();
-            }
-        }, 1200L, 1200L).getTaskId();
+            if (now.getHour() == 0 && now.getMinute() == 0) updateDailyBuff();
+        }, checkTicks, checkTicks).getTaskId();
     }
 
     public void disable() {
@@ -78,40 +72,32 @@ public class DailyBuffModule {
         ConfigManager.DayConfig dayConfig = config.getDayConfig(day);
 
         List<Integer> newIds = new ArrayList<>();
-
         switch (dayConfig.mode) {
             case FIXED -> newIds.addAll(dayConfig.fixedBuffs);
             case RANDOM -> {
                 List<Integer> pool = dayConfig.randomPool;
                 if (pool.isEmpty()) {
-                    plugin.getLogger().warning("Day " + day + " is set to random but pool is empty!");
+                    plugin.getLogger().warning("Day " + day + " is random but pool is empty!");
                 } else {
                     long seed = now.toEpochDay();
                     Random rng = new Random(seed);
                     int count = Math.min(config.getRandomCount(), pool.size());
-                    // Pick `count` unique buffs from pool (seeded by date = same all day)
                     List<Integer> shuffled = new ArrayList<>(pool);
                     for (int i = shuffled.size() - 1; i > 0; i--) {
                         int j = rng.nextInt(i + 1);
-                        int tmp = shuffled.get(i);
-                        shuffled.set(i, shuffled.get(j));
-                        shuffled.set(j, tmp);
+                        int tmp = shuffled.get(i); shuffled.set(i, shuffled.get(j)); shuffled.set(j, tmp);
                     }
                     newIds.addAll(shuffled.subList(0, count));
                 }
             }
-            case OFF -> {} // No buffs today
+            case OFF -> {}
         }
 
-        // Remove old buffs, apply new ones
         Bukkit.getOnlinePlayers().forEach(this::removeAllBuffEffects);
         currentBuffIds = newIds;
         Bukkit.getOnlinePlayers().forEach(p -> applyBuffs(p, currentBuffIds));
+        plugin.getLogger().info("Daily buffs updated (" + day + ", mode=" + dayConfig.mode + "): " + currentBuffIds);
 
-        String modeStr = dayConfig.mode.name().toLowerCase();
-        plugin.getLogger().info("Daily buffs updated (" + day + ", mode=" + modeStr + "): " + currentBuffIds);
-
-        // Broadcast to online players
         if (!currentBuffIds.isEmpty() && config.isBroadcastOnJoin()) {
             StringBuilder msg = new StringBuilder(config.getBroadcastColor());
             for (int id : currentBuffIds) {
@@ -122,29 +108,12 @@ public class DailyBuffModule {
         }
     }
 
-    public void applyBuffs(Player player, List<Integer> ids) {
-        BuffApplier.apply(player, ids, plugin);
-    }
-
-    public void removeAllBuffEffects(Player player) {
-        BuffApplier.removeAll(player);
-    }
-
-    public void applyToPlayer(Player player) {
-        if (!currentBuffIds.isEmpty()) {
-            applyBuffs(player, currentBuffIds);
-        }
-    }
-
+    public void applyBuffs(Player player, List<Integer> ids) { BuffApplier.apply(player, ids, plugin); }
+    public void removeAllBuffEffects(Player player) { BuffApplier.removeAll(player); }
+    public void applyToPlayer(Player player) { if (!currentBuffIds.isEmpty()) applyBuffs(player, currentBuffIds); }
     public boolean isBuffActive(int id) { return currentBuffIds.contains(id); }
     public List<Integer> getCurrentBuffIds() { return List.copyOf(currentBuffIds); }
     public void setCurrentBuffIds(List<Integer> ids) { this.currentBuffIds = new ArrayList<>(ids); }
-
-    public String getBuffName(int id) {
-        return (id >= 1 && id < BUFF_NAMES.length) ? BUFF_NAMES[id] : "Unknown";
-    }
-
-    public String getBuffDescription(int id) {
-        return (id >= 1 && id < BUFF_DESCS.length) ? BUFF_DESCS[id] : "";
-    }
+    public String getBuffName(int id) { return (id >= 1 && id < BUFF_NAMES.length) ? BUFF_NAMES[id] : "Unknown"; }
+    public String getBuffDescription(int id) { return (id >= 1 && id < BUFF_DESCS.length) ? BUFF_DESCS[id] : ""; }
 }
