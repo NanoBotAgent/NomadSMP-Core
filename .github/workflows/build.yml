@@ -18,9 +18,7 @@ jobs:
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v4
     - name: Build with Gradle
-      run: |
-        chmod +x gradlew || true
-        ./gradlew shadowJar 2>&1 || gradle shadowJar 2>&1
+      run: chmod +x gradlew && ./gradlew shadowJar
     - name: Upload plugin JAR
       uses: actions/upload-artifact@v4
       with:
