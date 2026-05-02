@@ -1,6 +1,7 @@
 package com.nomadsmp.core.modules;
 
 import com.nomadsmp.core.NomadCore;
+import com.nomadsmp.core.config.ConfigManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -67,7 +68,6 @@ public class DailyBuffModule {
 
     public void disable() {
         if (taskId != -1) Bukkit.getScheduler().cancelTask(taskId);
-        // Remove all buff effects
         Bukkit.getOnlinePlayers().forEach(this::removeAllBuffEffects);
     }
 
@@ -75,24 +75,51 @@ public class DailyBuffModule {
         LocalDate now = LocalDate.now();
         DayOfWeek day = now.getDayOfWeek();
         var config = plugin.getConfigManager();
+        ConfigManager.DayConfig dayConfig = config.getDayConfig(day);
 
-        List<Integer> newIds;
-        if (day == DayOfWeek.SATURDAY || day == DayOfWeek.SUNDAY) {
-            long seed = now.toEpochDay();
-            Random rng = new Random(seed);
-            List<Integer> pool = config.getWeekendPool();
-            int chosen = pool.get(rng.nextInt(pool.size()));
-            newIds = List.of(chosen);
-        } else {
-            newIds = config.getBuffIdsForDay(day);
+        List<Integer> newIds = new ArrayList<>();
+
+        switch (dayConfig.mode) {
+            case FIXED -> newIds.addAll(dayConfig.fixedBuffs);
+            case RANDOM -> {
+                List<Integer> pool = dayConfig.randomPool;
+                if (pool.isEmpty()) {
+                    plugin.getLogger().warning("Day " + day + " is set to random but pool is empty!");
+                } else {
+                    long seed = now.toEpochDay();
+                    Random rng = new Random(seed);
+                    int count = Math.min(config.getRandomCount(), pool.size());
+                    // Pick `count` unique buffs from pool (seeded by date = same all day)
+                    List<Integer> shuffled = new ArrayList<>(pool);
+                    for (int i = shuffled.size() - 1; i > 0; i--) {
+                        int j = rng.nextInt(i + 1);
+                        int tmp = shuffled.get(i);
+                        shuffled.set(i, shuffled.get(j));
+                        shuffled.set(j, tmp);
+                    }
+                    newIds.addAll(shuffled.subList(0, count));
+                }
+            }
+            case OFF -> {} // No buffs today
         }
 
         // Remove old buffs, apply new ones
         Bukkit.getOnlinePlayers().forEach(this::removeAllBuffEffects);
-        currentBuffIds = new ArrayList<>(newIds);
+        currentBuffIds = newIds;
         Bukkit.getOnlinePlayers().forEach(p -> applyBuffs(p, currentBuffIds));
 
-        plugin.getLogger().info("Daily buffs updated: " + currentBuffIds);
+        String modeStr = dayConfig.mode.name().toLowerCase();
+        plugin.getLogger().info("Daily buffs updated (" + day + ", mode=" + modeStr + "): " + currentBuffIds);
+
+        // Broadcast to online players
+        if (!currentBuffIds.isEmpty() && config.isBroadcastOnJoin()) {
+            StringBuilder msg = new StringBuilder(config.getBroadcastColor());
+            for (int id : currentBuffIds) {
+                if (msg.length() > 2) msg.append(", ");
+                msg.append(getBuffName(id));
+            }
+            Bukkit.broadcastMessage("\u00a78[\u00a76NomadSMP\u00a78] \u00a7eToday's buff: " + msg);
+        }
     }
 
     public void applyBuffs(Player player, List<Integer> ids) {
