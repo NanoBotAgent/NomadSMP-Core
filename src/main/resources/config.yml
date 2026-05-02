@@ -5,20 +5,20 @@
 
 nomad-system:
   enabled: true
-  migrate-day: MONDAY       # DayOfWeek enum value
-  migrate-hour: 0           # 24h clock (midnight = 0)
-  house-radius: 16          # Half-width of the schematic box saved per player
-  border-half-size: 250     # World border is 2x this (500x500 total)
-  safe-land-check: true     # Abort paste if Y < 60 or over liquid
+  migrate-day: MONDAY # DayOfWeek enum value
+  migrate-hour: 0 # 24h clock (midnight = 0)
+  house-radius: 16 # Half-width of the schematic box saved per player
+  border-half-size: 250 # World border is 2x this (500x500 total)
+  safe-land-check: true # Abort paste if Y < 60 or over liquid
 
 daily-buffs:
   enabled: true
-  # Fixed schedule (buff IDs 1-50, see BUFF REFERENCE in docs)
-  monday: [2]               # Power Miner
-  tuesday: [3]              # Roadrunner
-  wednesday: [1]            # Titanium (Unbreakable)
-  thursday: [2]             # Power Miner
-  friday: [3]               # Roadrunner
+  # Fixed schedule (use buff IDs 1-50, see BUFF REFERENCE in docs)
+  monday: [2] # Power Miner
+  tuesday: [3] # Roadrunner
+  wednesday: [1] # Titanium (Unbreakable)
+  thursday: [2] # Power Miner
+  friday: [3] # Roadrunner
   # Weekend is seeded-random from weekend-pool list
   weekend-pool: [1, 2, 3, 4, 5, 6, 7, 8]
   broadcast-on-join: true
@@ -27,24 +27,23 @@ daily-buffs:
 progression-lock:
   enabled: true
   end-locked: true
-  end-unlock-days: 30       # Days since world creation before End portal activates
+  end-unlock-days: 30 # Days since world creation before End portal activates
   netherite-crafting-banned: true
-  netherite-equip-punish: true  # Give Slowness V for 5s if Netherite armor is worn
-  block-gamemode-command: true  # Block /gamemode, /give, /op for everyone
+  netherite-equip-punish: true # Give Slowness V for 5s if Netherite armor is worn
+  block-gamemode-command: true # Block /gamemode, /give, /op for everyone including console
   block-give-command: true
-  server-start-date: "2025-01-01"
 
 anti-cheat:
   enabled: true
   block-seed-command: true
-  scramble-structure-seeds: true  # Offsets structure seeds at startup
-  ore-obfuscation: true           # Uses Paper engine-mode 2 obfuscation
+  scramble-structure-seeds: true # Offsets structure seeds in Paper world config at startup
+  ore-obfuscation: true # Uses Paper engine-mode 2 obfuscation
 
 social:
   enabled: true
   world-border: true
   disable-tpa: true
   disable-warp: true
-  disable-home-command: true   # /home and /sethome from other plugins are blocked
-  player-head-drop: true       # 100% chance on PvP kill
-  no-admin-op: true            # Strips OP from all players on startup
+  disable-home-command: true # /home and /sethome are blocked
+  player-head-drop: true # 100% chance on PvP kill
+  no-admin-op: true # Strips OP from all players on startup if block-gamemode-command is true
