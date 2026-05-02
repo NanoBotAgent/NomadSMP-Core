@@ -1,6 +1,6 @@
 plugins {
     java
-    id("com.github.johnrengelman.shadow") version "8.1.8"
+    id("io.github.goooler.shadow") version "8.1.8"
 }
 
 group = "com.nomadsmp"
@@ -26,7 +26,6 @@ dependencies {
 
 tasks.shadowJar {
     archiveClassifier.set("")
-    minimize()
 }
 
 tasks.build {
