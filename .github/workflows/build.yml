@@ -41,8 +41,9 @@ jobs:
         distribution: 'temurin'
     - name: Download Paper 26.1.2
       run: |
-        curl -sL "https://api.papermc.io/v2/projects/paper/versions/26.1.2/builds/53/downloads/paper-26.1.2-53.jar" -o paper.jar
+        curl -sL "https://fill-data.papermc.io/v1/objects/6934188878fc351e1be5bfba5f2b8c4591224886e4b34e3de09dbec68a351caf/paper-26.1.2-53.jar" -o paper.jar
         ls -lh paper.jar
+        java -jar paper.jar --version || true
     - name: Download plugin artifact
       uses: actions/download-artifact@v4
       with:
@@ -59,37 +60,31 @@ jobs:
     - name: Smoke test — start Paper with plugin
       timeout-minutes: 5
       run: |
-        # Start Paper server headlessly, wait for plugin enable, then stop
         java -Dpaper.playerconnection.keepalive=60 \
-             -Xmx512M -Xms512M \
-             -jar paper.jar --nogui \
-             --max-players=1 \
-             --world-dir=./test-world &
+        -Xmx512M -Xms512M \
+        -jar paper.jar --nogui \
+        --max-players=1 &
         SERVER_PID=$!
-        
-        # Wait for server to fully start (look for "Done" in log)
+
         TIMEOUT=120
         ELAPSED=0
         while [ $ELAPSED -lt $TIMEOUT ]; do
           if grep -q "Done (" logs/latest.log 2>/dev/null; then
-            echo "✅ Server started successfully!"
-            # Check plugin loaded
+            echo "Server started successfully!"
             if grep -q "NomadSMP-Core enabled" logs/latest.log 2>/dev/null; then
-              echo "✅ NomadSMP-Core plugin loaded successfully!"
+              echo "NomadSMP-Core plugin loaded successfully!"
             elif grep -q "NomadSMP-Core" logs/latest.log 2>/dev/null; then
-              echo "⚠️ NomadSMP-Core mentioned in log but may have errors"
+              echo "NomadSMP-Core mentioned in log but may have errors"
               grep -i "nomad\|error\|exception" logs/latest.log | tail -10
             else
-              echo "❌ NomadSMP-Core not found in log"
+              echo "NomadSMP-Core not found in log"
             fi
-            # Stop server gracefully
             kill $SERVER_PID 2>/dev/null
             wait $SERVER_PID 2>/dev/null
             exit 0
           fi
-          # Check for fatal errors
           if grep -q "Failed to start" logs/latest.log 2>/dev/null; then
-            echo "❌ Server failed to start"
+            echo "Server failed to start"
             tail -50 logs/latest.log
             kill $SERVER_PID 2>/dev/null
             exit 1
@@ -97,8 +92,8 @@ jobs:
           sleep 2
           ELAPSED=$((ELAPSED + 2))
         done
-        
-        echo "❌ Server did not start within ${TIMEOUT}s"
+
+        echo "Server did not start within ${TIMEOUT}s"
         if [ -f logs/latest.log ]; then
           tail -30 logs/latest.log
         fi
