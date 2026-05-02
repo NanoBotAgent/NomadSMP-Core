@@ -7,7 +7,8 @@ commands:
   nomad:
     description: Admin command for NomadSMP-Core
     permission: nomad.admin
-    usage: /nomad <reload|status|migratenow|setbuff|sethome>
+    usage: /nomad <reload|status|buffs|setbuff|setbuffpool|setborder|migratenow|sethome>
+    tab-completer: com.nomadsmp.core.commands.NomadCommand
 permissions:
   nomad.admin:
     description: Full admin access to NomadSMP commands
