@@ -2,6 +2,13 @@
 # NomadSMP-Core Configuration
 # /nomad reload to apply changes without restart
 # ─────────────────────────────────────────────
+#
+# NOTE: Potion effect amplifiers are 0-indexed!
+#   0 = Level I  (e.g. Haste I, Resistance I)
+#   1 = Level II (e.g. Haste II, Resistance II)
+#   2 = Level III, etc.
+# So amplifier: 0 is a fully functional Level I effect, NOT "off".
+# ─────────────────────────────────────────────
 
 nomad-system:
   enabled: true
@@ -35,22 +42,22 @@ daily-buffs:
       enabled: true           # If false, buff does nothing even when active
     2-power-miner:
       enabled: true
-      haste-amplifier: 0      # 0=Haste I, 1=Haste II, etc.
+      haste-amplifier: 0      # 0=Haste I, 1=Haste II, 2=Haste III, etc.
     3-roadrunner:
       enabled: true
       speed-modifier: 0.12    # Movement speed attribute addition
     4-featherweight:
       enabled: true
-      amplifier: 0            # Slow Falling amplifier
+      amplifier: 0            # 0=Slow Falling I, 1=Slow Falling II, etc.
     5-iron-lung:
       enabled: true
-      amplifier: 0            # Water Breathing amplifier
+      amplifier: 0            # 0=Water Breathing I, 1=Water Breathing II, etc.
     6-pyro:
       enabled: true
-      amplifier: 0            # Fire Resistance amplifier
+      amplifier: 0            # 0=Fire Resistance I, 1=Fire Resistance II, etc.
     7-night-owl:
       enabled: true
-      amplifier: 0            # Night Vision amplifier
+      amplifier: 0            # 0=Night Vision I, 1=Night Vision II, etc.
     8-looter:
       enabled: true
       drop-multiplier: 2      # 2=double drops, 3=triple, etc.
@@ -83,7 +90,7 @@ daily-buffs:
       speed-modifier: 0.12    # Swim speed attribute addition
     18-gravity:
       enabled: true
-      jump-amplifier: 1        # 1=Jump Boost II
+      jump-amplifier: 1        # 0=Jump Boost I, 1=Jump Boost II, etc.
     19-vampire:
       enabled: true
       heal-per-kill: 1.0       # HP restored per kill
@@ -95,7 +102,7 @@ daily-buffs:
       discount: 0.5            # 0.5 = 50% villager discount
     22-tank:
       enabled: true
-      resistance-amplifier: 0  # 0=Resistance I
+      resistance-amplifier: 0  # 0=Resistance I, 1=Resistance II, etc.
     23-glass-cannon:
       enabled: true
       damage-dealt-multiplier: 2.0  # Outgoing damage multiplier
@@ -108,7 +115,7 @@ daily-buffs:
       enchant-cost: 1          # Level cost for enchanting
     26-ninja:
       enabled: true
-      amplifier: 0             # Invisibility amplifier
+      amplifier: 0             # 0=Invisibility I, 1=Invisibility II, etc.
     27-spider:
       enabled: true
       climb-velocity: 0.3      # Upward velocity when wall-climbing
@@ -120,7 +127,7 @@ daily-buffs:
       extra-hearts: 10.0       # 2.0=1 heart, 10.0=5 hearts
     30-medic:
       enabled: true
-      regen-amplifier: 1       # 1=Regen II
+      regen-amplifier: 1       # 0=Regen I, 1=Regen II, etc.
     31-sonic:
       enabled: true
       speed-modifier: 0.4      # Movement speed attribute addition
@@ -133,7 +140,7 @@ daily-buffs:
       loot: [STRING, WHEAT_SEEDS, POPPY, DANDELION, FEATHER]
     34-glowstick:
       enabled: true
-      amplifier: 0             # Glowing amplifier
+      amplifier: 0             # 0=Glowing I, 1=Glowing II, etc.
     35-gardener:
       enabled: true
       bone-meal-radius: 1      # 1=3x3, 2=5x5
@@ -156,13 +163,13 @@ daily-buffs:
       cooldown-ms: 10000       # Cooldown in milliseconds
     41-parachute:
       enabled: true
-      amplifier: 0             # Slow Falling amplifier
+      amplifier: 0             # 0=Slow Falling I, 1=Slow Falling II, etc.
     42-unstoppable:
       enabled: true
       immune-causes: [WITHER, SLOW, BLINDNESS]
     43-warrior:
       enabled: true
-      strength-amplifier: 0    # 0=Strength I
+      strength-amplifier: 0    # 0=Strength I, 1=Strength II, etc.
     44-inertia:
       enabled: true
       velocity-threshold: 0.3  # Horizontal vel above = knockback
@@ -184,7 +191,7 @@ daily-buffs:
       infinite-oxygen: true    # Never lose air underwater
     50-pacifist:
       enabled: true
-      regen-amplifier: 3       # 3=Regen IV
+      regen-amplifier: 3       # 0=Regen I, 1=Regen II, 2=Regen III, 3=Regen IV
 
 progression-lock:
   enabled: true
@@ -196,8 +203,8 @@ progression-lock:
     enabled: true
   netherite-equip-punish:
     enabled: true
-    duration-ticks: 100
-    amplifier: 4
+    duration-ticks: 100       # Slowness duration in ticks
+    amplifier: 4              # 0=Slowness I, 4=Slowness V
   block-gamemode-command:
     enabled: true
   block-give-command:
