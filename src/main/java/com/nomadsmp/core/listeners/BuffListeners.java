@@ -43,10 +43,13 @@ public class BuffListeners implements Listener {
         inertiaTaskId = Bukkit.getScheduler().runTaskTimer(plugin, this::inertiaTick, 1L, 1L).getTaskId();
     }
 
-    private boolean active(int id) { return plugin.getDailyBuffModule().isBuffActive(id) && plugin.getConfigManager().isBuffEnabled(id); }
+    private boolean active(int id) {
+        return plugin.getDailyBuffModule().isBuffActive(id) && plugin.getConfigManager().isBuffEnabled(id);
+    }
+
     private ConfigManager cfg() { return plugin.getConfigManager(); }
 
-    // 1: Titanium
+    // 1: Titanium — no durability loss
     @EventHandler
     public void onItemDamage(PlayerItemDamageEvent event) {
         if (active(1)) event.setCancelled(true);
@@ -122,7 +125,27 @@ public class BuffListeners implements Listener {
         }
     }
 
-    // 33: Scavenger (separate handler to avoid priority conflicts)
+    private void bfsBreak(Block start, Material target, int maxBlocks, Player player) {
+        Set<Block> visited = new HashSet<>();
+        Queue<Block> queue = new LinkedList<>();
+        queue.add(start);
+        visited.add(start);
+        while (!queue.isEmpty() && visited.size() < maxBlocks) {
+            Block current = queue.poll();
+            for (BlockFace face : BlockFace.values()) {
+                Block neighbor = current.getRelative(face);
+                if (!visited.contains(neighbor) && neighbor.getType() == target) {
+                    visited.add(neighbor);
+                    queue.add(neighbor);
+                }
+            }
+        }
+        for (Block b : visited) {
+            if (!b.equals(start)) b.breakNaturally(player.getInventory().getItemInMainHand());
+        }
+    }
+
+    // 33: Scavenger
     @EventHandler
     public void onScavengerBreak(BlockBreakEvent event) {
         if (!active(33)) return;
@@ -320,10 +343,13 @@ public class BuffListeners implements Listener {
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         UUID uuid = event.getPlayer().getUniqueId();
-        teleporterCooldowns.remove(uuid); hasDoubleJumped.remove(uuid);
-        pearlTimeMap.remove(uuid); inertiaPlayers.remove(uuid);
+        teleporterCooldowns.remove(uuid);
+        hasDoubleJumped.remove(uuid);
+        pearlTimeMap.remove(uuid);
+        inertiaPlayers.remove(uuid);
     }
 
+    // Inertia tick (44): cancel knockback velocity for recently-hit players
     private void inertiaTick() {
         if (!active(44)) { inertiaPlayers.clear(); return; }
         double threshold = cfg().getInertiaThreshold();
@@ -335,10 +361,13 @@ public class BuffListeners implements Listener {
                     player.setVelocity(new Vector(0, vel.getY(), 0));
                     inertiaPlayers.remove(uuid);
                 }
-            } else { inertiaPlayers.remove(uuid); }
+            } else {
+                inertiaPlayers.remove(uuid);
+            }
         }
     }
 
+    // Magnet tick (11): pull nearby items toward players
     private void magnetTick() {
         if (!active(11)) return;
         int range = cfg().getMagnetRange();
@@ -354,6 +383,7 @@ public class BuffListeners implements Listener {
         }
     }
 
+    // Gravity Well tick (45): pull targeting mobs toward players
     private void gravityWellTick() {
         if (!active(45)) return;
         int range = cfg().getGravityWellRange();
