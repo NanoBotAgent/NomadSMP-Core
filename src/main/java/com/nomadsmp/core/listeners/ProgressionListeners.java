@@ -19,9 +19,7 @@ public class ProgressionListeners implements Listener {
 
     private final NomadCore plugin;
 
-    public ProgressionListeners(NomadCore plugin) {
-        this.plugin = plugin;
-    }
+    public ProgressionListeners(NomadCore plugin) { this.plugin = plugin; }
 
     @EventHandler
     public void onPortal(PlayerPortalEvent event) {
@@ -67,11 +65,16 @@ public class ProgressionListeners implements Listener {
     }
 
     private void checkNetheritePunish(Player player) {
-        if (!plugin.getConfigManager().isNetheriteEquipPunish()) return;
+        var cfg = plugin.getConfigManager();
+        if (!cfg.isNetheriteEquipPunish()) return;
         for (ItemStack armor : player.getInventory().getArmorContents()) {
             if (armor != null && armor.getType().name().contains("NETHERITE")) {
-                player.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 100, 4));
-                player.sendMessage("\u00a7c[NomadSMP] \u00a7eNetherite armor is too heavy! Slowness V applied.");
+                player.addPotionEffect(new PotionEffect(
+                    PotionEffectType.SLOWNESS,
+                    cfg.getNetheritePunishDurationTicks(),
+                    cfg.getNetheritePunishAmplifier()
+                ));
+                player.sendMessage("\u00a7c[NomadSMP] \u00a7eNetherite armor is too heavy! Slowness applied.");
                 return;
             }
         }
