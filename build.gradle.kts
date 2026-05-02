@@ -16,12 +16,13 @@ repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/")
     maven("https://maven.enginehub.org/repo/")
+    flatDir { dirs("libs") }
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:26.1.2-R0.1-SNAPSHOT")
-    compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.4.3-beta-01")
-    compileOnly("com.sk89q.worldedit:worldedit-core:7.4.3-beta-01")
+    compileOnly("io.papermc.paper:paper-api:26.1.2.build.53-stable")
+    compileOnly("com.sk89q.worldedit:worldedit-core:7.4.2")
+    compileOnly(":worldedit-bukkit-7.4.3-beta-01")
 }
 
 tasks.shadowJar {
