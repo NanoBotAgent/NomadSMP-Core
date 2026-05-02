@@ -21,140 +21,196 @@ daily-buffs:
   random-count: 1
 
   # ─── Per-day schedule: mode = fixed | random | off ───
-  monday:    { mode: fixed,  buffs: [2],              pool: [] }
-  tuesday:   { mode: fixed,  buffs: [3],              pool: [] }
-  wednesday: { mode: fixed,  buffs: [1],              pool: [] }
-  thursday:  { mode: fixed,  buffs: [2],              pool: [] }
-  friday:    { mode: fixed,  buffs: [3],              pool: [] }
-  saturday:  { mode: random, buffs: [],                pool: [1, 2, 3, 4, 5, 6, 7, 8] }
-  sunday:    { mode: random, buffs: [],                pool: [1, 2, 3, 4, 5, 6, 7, 8] }
+  monday:    { mode: fixed, buffs: [2], pool: [] }
+  tuesday:   { mode: fixed, buffs: [3], pool: [] }
+  wednesday: { mode: fixed, buffs: [1], pool: [] }
+  thursday:  { mode: fixed, buffs: [2], pool: [] }
+  friday:    { mode: fixed, buffs: [3], pool: [] }
+  saturday:  { mode: random, buffs: [], pool: [1, 2, 3, 4, 5, 6, 7, 8] }
+  sunday:    { mode: random, buffs: [], pool: [1, 2, 3, 4, 5, 6, 7, 8] }
 
   # ─── Per-buff settings — every tunable grouped under its buff ───
   buffs:
     1-titanium:
-      enabled: true                          # If false, buff does nothing even when active
+      enabled: true           # If false, buff does nothing even when active
     2-power-miner:
-      haste-amplifier: 0                     # 0=Haste I, 1=Haste II, etc.
+      enabled: true
+      haste-amplifier: 0      # 0=Haste I, 1=Haste II, etc.
     3-roadrunner:
-      speed-modifier: 0.12                   # Movement speed attribute addition
+      enabled: true
+      speed-modifier: 0.12    # Movement speed attribute addition
     4-featherweight:
-      amplifier: 0                           # Slow Falling amplifier
+      enabled: true
+      amplifier: 0            # Slow Falling amplifier
     5-iron-lung:
-      amplifier: 0                           # Water Breathing amplifier
+      enabled: true
+      amplifier: 0            # Water Breathing amplifier
     6-pyro:
-      amplifier: 0                           # Fire Resistance amplifier
+      enabled: true
+      amplifier: 0            # Fire Resistance amplifier
     7-night-owl:
-      amplifier: 0                           # Night Vision amplifier
+      enabled: true
+      amplifier: 0            # Night Vision amplifier
     8-looter:
-      drop-multiplier: 2                     # 2=double drops, 3=triple, etc.
+      enabled: true
+      drop-multiplier: 2      # 2=double drops, 3=triple, etc.
     9-bountiful-harvest:
-      growth-boost: true                     # Auto bone-meal on crop growth
+      enabled: true
+      growth-boost: true       # Auto bone-meal on crop growth
     10-lucky-fisher:
-      enabled: true                          # (placeholder — listener-driven)
+      enabled: true           # (placeholder — listener-driven)
     11-magnet:
-      range: 5                               # Blocks to pull items from
-      pull-strength: 0.5                     # Pull velocity
+      enabled: true
+      range: 5                # Blocks to pull items from
+      pull-strength: 0.5      # Pull velocity
     12-chef:
-      cancel-hunger: true                    # Cancel hunger drain
+      enabled: true
+      cancel-hunger: true      # Cancel hunger drain
     13-blacksmith:
-      auto-smelt: true                       # Auto-smelt raw ores
+      enabled: true
+      auto-smelt: true         # Auto-smelt raw ores
     14-timber:
-      max-blocks: 50                         # Max logs per tree chop
+      enabled: true
+      max-blocks: 50          # Max logs per tree chop
     15-vein-miner:
-      max-blocks: 32                         # Max ores per vein break
+      enabled: true
+      max-blocks: 32          # Max ores per vein break
     16-trophy-hunter:
-      head-drop-chance: 1.0                  # 0.0–1.0 chance for mob head
+      enabled: true
+      head-drop-chance: 1.0    # 0.0–1.0 chance for mob head
     17-dolphin:
-      speed-modifier: 0.12                   # Swim speed attribute addition
+      enabled: true
+      speed-modifier: 0.12    # Swim speed attribute addition
     18-gravity:
-      jump-amplifier: 1                      # 1=Jump Boost II
+      enabled: true
+      jump-amplifier: 1        # 1=Jump Boost II
     19-vampire:
-      heal-per-kill: 1.0                     # HP restored per kill
+      enabled: true
+      heal-per-kill: 1.0       # HP restored per kill
     20-xp-junkie:
-      xp-multiplier: 2                       # XP gain multiplier
+      enabled: true
+      xp-multiplier: 2        # XP gain multiplier
     21-merchant:
-      discount: 0.5                          # 0.5 = 50% villager discount
+      enabled: true
+      discount: 0.5            # 0.5 = 50% villager discount
     22-tank:
-      resistance-amplifier: 0                # 0=Resistance I
+      enabled: true
+      resistance-amplifier: 0  # 0=Resistance I
     23-glass-cannon:
-      damage-dealt-multiplier: 2.0           # Outgoing damage multiplier
-      damage-taken-multiplier: 2.0           # Incoming damage multiplier
+      enabled: true
+      damage-dealt-multiplier: 2.0  # Outgoing damage multiplier
+      damage-taken-multiplier: 2.0  # Incoming damage multiplier
     24-archer:
-      free-arrows: true                      # Arrows cost nothing
+      enabled: true
+      free-arrows: true        # Arrows cost nothing
     25-librarian:
-      enchant-cost: 1                        # Level cost for enchanting
+      enabled: true
+      enchant-cost: 1          # Level cost for enchanting
     26-ninja:
-      amplifier: 0                           # Invisibility amplifier
+      enabled: true
+      amplifier: 0             # Invisibility amplifier
     27-spider:
-      climb-velocity: 0.3                    # Upward velocity when wall-climbing
+      enabled: true
+      climb-velocity: 0.3      # Upward velocity when wall-climbing
     28-ender:
-      pearl-fall-window-ms: 1000            # Fall immunity window after pearl (ms)
+      enabled: true
+      pearl-fall-window-ms: 1000  # Fall immunity window after pearl (ms)
     29-healthy:
-      extra-hearts: 10.0                     # 2.0=1 heart, 10.0=5 hearts
+      enabled: true
+      extra-hearts: 10.0       # 2.0=1 heart, 10.0=5 hearts
     30-medic:
-      regen-amplifier: 1                     # 1=Regen II
+      enabled: true
+      regen-amplifier: 1       # 1=Regen II
     31-sonic:
-      speed-modifier: 0.4                    # Movement speed attribute addition
+      enabled: true
+      speed-modifier: 0.4      # Movement speed attribute addition
     32-rich:
-      nugget-chance: 0.1                     # 0.0–1.0 gold nugget drop chance
+      enabled: true
+      nugget-chance: 0.1        # 0.0–1.0 gold nugget drop chance
     33-scavenger:
-      drop-chance: 0.05                      # Per grass break
+      enabled: true
+      drop-chance: 0.05        # Per grass break
       loot: [STRING, WHEAT_SEEDS, POPPY, DANDELION, FEATHER]
     34-glowstick:
-      amplifier: 0                           # Glowing amplifier
+      enabled: true
+      amplifier: 0             # Glowing amplifier
     35-gardener:
-      bone-meal-radius: 1                    # 1=3x3, 2=5x5
+      enabled: true
+      bone-meal-radius: 1      # 1=3x3, 2=5x5
     36-snowman:
-      snow-trail: true                       # Leave snow when walking
-      fire-immune: true                      # Cancel fire damage
+      enabled: true
+      snow-trail: true         # Leave snow when walking
+      fire-immune: true        # Cancel fire damage
     37-friendly:
-      attraction-range: 5                    # Peaceful mob attraction range
+      enabled: true
+      attraction-range: 5      # Peaceful mob attraction range
     38-slimy:
-      bounce-multiplier: 0.05               # Fall distance → upward velocity
+      enabled: true
+      bounce-multiplier: 0.05  # Fall distance → upward velocity
     39-thor:
-      lightning-chance: 0.05                 # 0.0–1.0 per hit
+      enabled: true
+      lightning-chance: 0.05    # 0.0–1.0 per hit
     40-teleporter:
-      distance: 5                            # Blocks forward on sneak
-      cooldown-ms: 10000                     # Cooldown in milliseconds
+      enabled: true
+      distance: 5              # Blocks forward on sneak
+      cooldown-ms: 10000       # Cooldown in milliseconds
     41-parachute:
-      amplifier: 0                           # Slow Falling amplifier
+      enabled: true
+      amplifier: 0             # Slow Falling amplifier
     42-unstoppable:
+      enabled: true
       immune-causes: [WITHER, SLOW, BLINDNESS]
     43-warrior:
-      strength-amplifier: 0                  # 0=Strength I
+      enabled: true
+      strength-amplifier: 0    # 0=Strength I
     44-inertia:
-      velocity-threshold: 0.3               # Horizontal vel above = knockback
+      enabled: true
+      velocity-threshold: 0.3  # Horizontal vel above = knockback
     45-gravity-well:
-      range: 5                               # Pull range in blocks
-      pull-strength: 0.3                     # Pull velocity
+      enabled: true
+      range: 5                 # Pull range in blocks
+      pull-strength: 0.3       # Pull velocity
     46-alchemist:
-      duration-multiplier: 3                 # Potion duration multiplier
+      enabled: true
+      duration-multiplier: 3   # Potion duration multiplier
     47-builder:
-      refund-chance: 0.2                     # 0.0–1.0 block refund chance
+      enabled: true
+      refund-chance: 0.2        # 0.0–1.0 block refund chance
     48-double-jump:
-      velocity: 0.8                          # Upward launch velocity
+      enabled: true
+      velocity: 0.8            # Upward launch velocity
     49-whale:
-      infinite-oxygen: true                  # Never lose air underwater
+      enabled: true
+      infinite-oxygen: true    # Never lose air underwater
     50-pacifist:
-      regen-amplifier: 3                     # 3=Regen IV
+      enabled: true
+      regen-amplifier: 3       # 3=Regen IV
 
 progression-lock:
   enabled: true
-  end-locked: true
-  end-unlock-days: 30
-  server-start-date: "2025-01-01"
-  netherite-crafting-banned: true
-  netherite-equip-punish: true
-  netherite-punish-duration-ticks: 100
-  netherite-punish-amplifier: 4
-  block-gamemode-command: true
-  block-give-command: true
+  end-lock:
+    enabled: true
+    unlock-days: 30
+    server-start-date: "2025-01-01"
+  netherite-crafting-ban:
+    enabled: true
+  netherite-equip-punish:
+    enabled: true
+    duration-ticks: 100
+    amplifier: 4
+  block-gamemode-command:
+    enabled: true
+  block-give-command:
+    enabled: true
 
 anti-cheat:
   enabled: true
-  block-seed-command: true
-  scramble-structure-seeds: true
-  ore-obfuscation: true
+  block-seed-command:
+    enabled: true
+  scramble-structure-seeds:
+    enabled: true
+  ore-obfuscation:
+    enabled: true
 
 social:
   enabled: true
@@ -165,8 +221,13 @@ social:
     center-z: 0
     damage-amount: 0.5
     warning-distance: 10
-  disable-tpa: true
-  disable-warp: true
-  disable-home-command: true
-  player-head-drop: true
-  no-admin-op: true
+  disable-tpa:
+    enabled: true
+  disable-warp:
+    enabled: true
+  disable-home-command:
+    enabled: true
+  player-head-drop:
+    enabled: true
+  no-admin-op:
+    enabled: true

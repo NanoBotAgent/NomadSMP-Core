@@ -35,21 +35,21 @@ public class ConfigManager {
 
     // ─── Progression lock ───
     private boolean progressionLockEnabled;
-    private boolean endLocked;
+    private boolean endLockEnabled;
     private int endUnlockDays;
     private String serverStartDate;
-    private boolean netheriteCraftingBanned;
-    private boolean netheriteEquipPunish;
+    private boolean netheriteCraftingBanEnabled;
+    private boolean netheriteEquipPunishEnabled;
     private int netheritePunishDurationTicks;
     private int netheritePunishAmplifier;
-    private boolean blockGamemodeCommand;
-    private boolean blockGiveCommand;
+    private boolean blockGamemodeCommandEnabled;
+    private boolean blockGiveCommandEnabled;
 
     // ─── Anti-cheat ───
     private boolean antiCheatEnabled;
-    private boolean blockSeedCommand;
-    private boolean scrambleStructureSeeds;
-    private boolean oreObfuscation;
+    private boolean blockSeedCommandEnabled;
+    private boolean scrambleStructureSeedsEnabled;
+    private boolean oreObfuscationEnabled;
 
     // ─── Social ───
     private boolean socialEnabled;
@@ -59,11 +59,11 @@ public class ConfigManager {
     private int worldBorderCenterZ;
     private double worldBorderDamageAmount;
     private int worldBorderWarningDistance;
-    private boolean disableTpa;
-    private boolean disableWarp;
-    private boolean disableHomeCommand;
-    private boolean playerHeadDrop;
-    private boolean noAdminOp;
+    private boolean disableTpaEnabled;
+    private boolean disableWarpEnabled;
+    private boolean disableHomeCommandEnabled;
+    private boolean playerHeadDropEnabled;
+    private boolean noAdminOpEnabled;
 
     // ─── Per-buff section keys (1-titanium, 2-power-miner, etc.) ───
     private static final String[] BUFF_KEYS = {
@@ -103,41 +103,41 @@ public class ConfigManager {
     public boolean isBuffEnabled(int id) { return buffBool(id, "enabled", true); }
 
     // ─── Convenience getters per buff ───
-    public int getPowerMinerAmplifier()       { return buffInt(2, "haste-amplifier", 0); }
-    public double getRoadrunnerSpeed()        { return buffDouble(3, "speed-modifier", 0.12); }
-    public double getDolphinSpeed()           { return buffDouble(17, "speed-modifier", 0.12); }
-    public double getSonicSpeed()             { return buffDouble(31, "speed-modifier", 0.4); }
-    public double getHealthyHearts()          { return buffDouble(29, "extra-hearts", 10.0); }
-    public int getLooterMultiplier()          { return buffInt(8, "drop-multiplier", 2); }
-    public int getTimberMax()                 { return buffInt(14, "max-blocks", 50); }
-    public int getVeinMinerMax()              { return buffInt(15, "max-blocks", 32); }
-    public int getMagnetRange()               { return buffInt(11, "range", 5); }
-    public double getMagnetStrength()         { return buffDouble(11, "pull-strength", 0.5); }
-    public double getVampireHeal()            { return buffDouble(19, "heal-per-kill", 1.0); }
-    public int getXpMultiplier()              { return buffInt(20, "xp-multiplier", 2); }
-    public double getGlassCannonDealt()       { return buffDouble(23, "damage-dealt-multiplier", 2.0); }
-    public double getGlassCannonTaken()       { return buffDouble(23, "damage-taken-multiplier", 2.0); }
-    public int getLibrarianCost()             { return buffInt(25, "enchant-cost", 1); }
-    public double getSpiderClimbVelocity()    { return buffDouble(27, "climb-velocity", 0.3); }
-    public long getEnderPearlWindowMs()       { return buffInt(28, "pearl-fall-window-ms", 1000); }
-    public double getRichNuggetChance()       { return buffDouble(32, "nugget-chance", 0.1); }
-    public double getScavengerChance()        { return buffDouble(33, "drop-chance", 0.05); }
+    public int getPowerMinerAmplifier() { return buffInt(2, "haste-amplifier", 0); }
+    public double getRoadrunnerSpeed() { return buffDouble(3, "speed-modifier", 0.12); }
+    public double getDolphinSpeed() { return buffDouble(17, "speed-modifier", 0.12); }
+    public double getSonicSpeed() { return buffDouble(31, "speed-modifier", 0.4); }
+    public double getHealthyHearts() { return buffDouble(29, "extra-hearts", 10.0); }
+    public int getLooterMultiplier() { return buffInt(8, "drop-multiplier", 2); }
+    public int getTimberMax() { return buffInt(14, "max-blocks", 50); }
+    public int getVeinMinerMax() { return buffInt(15, "max-blocks", 32); }
+    public int getMagnetRange() { return buffInt(11, "range", 5); }
+    public double getMagnetStrength() { return buffDouble(11, "pull-strength", 0.5); }
+    public double getVampireHeal() { return buffDouble(19, "heal-per-kill", 1.0); }
+    public int getXpMultiplier() { return buffInt(20, "xp-multiplier", 2); }
+    public double getGlassCannonDealt() { return buffDouble(23, "damage-dealt-multiplier", 2.0); }
+    public double getGlassCannonTaken() { return buffDouble(23, "damage-taken-multiplier", 2.0); }
+    public int getLibrarianCost() { return buffInt(25, "enchant-cost", 1); }
+    public double getSpiderClimbVelocity() { return buffDouble(27, "climb-velocity", 0.3); }
+    public long getEnderPearlWindowMs() { return buffInt(28, "pearl-fall-window-ms", 1000); }
+    public double getRichNuggetChance() { return buffDouble(32, "nugget-chance", 0.1); }
+    public double getScavengerChance() { return buffDouble(33, "drop-chance", 0.05); }
     public List<Material> getScavengerLoot() {
         return config.getStringList(bkey(33) + "loot").stream()
             .map(s -> { try { return Material.valueOf(s); } catch (Exception e) { return null; } })
             .filter(m -> m != null).collect(Collectors.toList());
     }
-    public int getGardenerRadius()            { return buffInt(35, "bone-meal-radius", 1); }
-    public double getThorChance()             { return buffDouble(39, "lightning-chance", 0.05); }
-    public int getTeleporterDistance()        { return buffInt(40, "distance", 5); }
-    public long getTeleporterCooldownMs()     { return buffInt(40, "cooldown-ms", 10000); }
-    public double getInertiaThreshold()       { return buffDouble(44, "velocity-threshold", 0.3); }
-    public int getGravityWellRange()          { return buffInt(45, "range", 5); }
-    public double getGravityWellStrength()    { return buffDouble(45, "pull-strength", 0.3); }
-    public int getAlchemistMultiplier()       { return buffInt(46, "duration-multiplier", 3); }
-    public double getBuilderRefundChance()    { return buffDouble(47, "refund-chance", 0.2); }
-    public double getDoubleJumpVelocity()     { return buffDouble(48, "velocity", 0.8); }
-    public double getSlimyBounceMultiplier()  { return buffDouble(38, "bounce-multiplier", 0.05); }
+    public int getGardenerRadius() { return buffInt(35, "bone-meal-radius", 1); }
+    public double getThorChance() { return buffDouble(39, "lightning-chance", 0.05); }
+    public int getTeleporterDistance() { return buffInt(40, "distance", 5); }
+    public long getTeleporterCooldownMs() { return buffInt(40, "cooldown-ms", 10000); }
+    public double getInertiaThreshold() { return buffDouble(44, "velocity-threshold", 0.3); }
+    public int getGravityWellRange() { return buffInt(45, "range", 5); }
+    public double getGravityWellStrength() { return buffDouble(45, "pull-strength", 0.3); }
+    public int getAlchemistMultiplier() { return buffInt(46, "duration-multiplier", 3); }
+    public double getBuilderRefundChance() { return buffDouble(47, "refund-chance", 0.2); }
+    public double getDoubleJumpVelocity() { return buffDouble(48, "velocity", 0.8); }
+    public double getSlimyBounceMultiplier() { return buffDouble(38, "bounce-multiplier", 0.05); }
 
     // ─── Load all values ───
     private void loadValues() {
@@ -174,22 +174,25 @@ public class ConfigManager {
             }
         }
 
+        // ─── Progression lock (sub-feature toggles) ───
         progressionLockEnabled = config.getBoolean("progression-lock.enabled", true);
-        endLocked = config.getBoolean("progression-lock.end-locked", true);
-        endUnlockDays = config.getInt("progression-lock.end-unlock-days", 30);
-        serverStartDate = config.getString("progression-lock.server-start-date", "2025-01-01");
-        netheriteCraftingBanned = config.getBoolean("progression-lock.netherite-crafting-banned", true);
-        netheriteEquipPunish = config.getBoolean("progression-lock.netherite-equip-punish", true);
-        netheritePunishDurationTicks = config.getInt("progression-lock.netherite-punish-duration-ticks", 100);
-        netheritePunishAmplifier = config.getInt("progression-lock.netherite-punish-amplifier", 4);
-        blockGamemodeCommand = config.getBoolean("progression-lock.block-gamemode-command", true);
-        blockGiveCommand = config.getBoolean("progression-lock.block-give-command", true);
+        endLockEnabled = config.getBoolean("progression-lock.end-lock.enabled", true);
+        endUnlockDays = config.getInt("progression-lock.end-lock.unlock-days", 30);
+        serverStartDate = config.getString("progression-lock.end-lock.server-start-date", "2025-01-01");
+        netheriteCraftingBanEnabled = config.getBoolean("progression-lock.netherite-crafting-ban.enabled", true);
+        netheriteEquipPunishEnabled = config.getBoolean("progression-lock.netherite-equip-punish.enabled", true);
+        netheritePunishDurationTicks = config.getInt("progression-lock.netherite-equip-punish.duration-ticks", 100);
+        netheritePunishAmplifier = config.getInt("progression-lock.netherite-equip-punish.amplifier", 4);
+        blockGamemodeCommandEnabled = config.getBoolean("progression-lock.block-gamemode-command.enabled", true);
+        blockGiveCommandEnabled = config.getBoolean("progression-lock.block-give-command.enabled", true);
 
+        // ─── Anti-cheat (sub-feature toggles) ───
         antiCheatEnabled = config.getBoolean("anti-cheat.enabled", true);
-        blockSeedCommand = config.getBoolean("anti-cheat.block-seed-command", true);
-        scrambleStructureSeeds = config.getBoolean("anti-cheat.scramble-structure-seeds", true);
-        oreObfuscation = config.getBoolean("anti-cheat.ore-obfuscation", true);
+        blockSeedCommandEnabled = config.getBoolean("anti-cheat.block-seed-command.enabled", true);
+        scrambleStructureSeedsEnabled = config.getBoolean("anti-cheat.scramble-structure-seeds.enabled", true);
+        oreObfuscationEnabled = config.getBoolean("anti-cheat.ore-obfuscation.enabled", true);
 
+        // ─── Social (sub-feature toggles) ───
         socialEnabled = config.getBoolean("social.enabled", true);
         ConfigurationSection borderSec = config.getConfigurationSection("social.world-border");
         if (borderSec != null) {
@@ -204,11 +207,11 @@ public class ConfigManager {
             worldBorderCenterX = 0; worldBorderCenterZ = 0;
             worldBorderDamageAmount = 0.5; worldBorderWarningDistance = 10;
         }
-        disableTpa = config.getBoolean("social.disable-tpa", true);
-        disableWarp = config.getBoolean("social.disable-warp", true);
-        disableHomeCommand = config.getBoolean("social.disable-home-command", true);
-        playerHeadDrop = config.getBoolean("social.player-head-drop", true);
-        noAdminOp = config.getBoolean("social.no-admin-op", true);
+        disableTpaEnabled = config.getBoolean("social.disable-tpa.enabled", true);
+        disableWarpEnabled = config.getBoolean("social.disable-warp.enabled", true);
+        disableHomeCommandEnabled = config.getBoolean("social.disable-home-command.enabled", true);
+        playerHeadDropEnabled = config.getBoolean("social.player-head-drop.enabled", true);
+        noAdminOpEnabled = config.getBoolean("social.no-admin-op.enabled", true);
     }
 
     // ─── Getters: Nomad system ───
@@ -234,21 +237,33 @@ public class ConfigManager {
 
     // ─── Getters: Progression lock ───
     public boolean isProgressionLockEnabled() { return progressionLockEnabled; }
-    public boolean isEndLocked() { return endLocked; }
+    public boolean isEndLockEnabled() { return endLockEnabled; }
     public int getEndUnlockDays() { return endUnlockDays; }
     public String getServerStartDate() { return serverStartDate; }
-    public boolean isNetheriteCraftingBanned() { return netheriteCraftingBanned; }
-    public boolean isNetheriteEquipPunish() { return netheriteEquipPunish; }
+    public boolean isNetheriteCraftingBanEnabled() { return netheriteCraftingBanEnabled; }
+    public boolean isNetheriteEquipPunishEnabled() { return netheriteEquipPunishEnabled; }
     public int getNetheritePunishDurationTicks() { return netheritePunishDurationTicks; }
     public int getNetheritePunishAmplifier() { return netheritePunishAmplifier; }
-    public boolean isBlockGamemodeCommand() { return blockGamemodeCommand; }
-    public boolean isBlockGiveCommand() { return blockGiveCommand; }
+    public boolean isBlockGamemodeCommandEnabled() { return blockGamemodeCommandEnabled; }
+    public boolean isBlockGiveCommandEnabled() { return blockGiveCommandEnabled; }
+
+    // Legacy compatibility — old getter names map to new toggles
+    public boolean isEndLocked() { return endLockEnabled; }
+    public boolean isNetheriteCraftingBanned() { return netheriteCraftingBanEnabled; }
+    public boolean isNetheriteEquipPunish() { return netheriteEquipPunishEnabled; }
+    public boolean isBlockGamemodeCommand() { return blockGamemodeCommandEnabled; }
+    public boolean isBlockGiveCommand() { return blockGiveCommandEnabled; }
 
     // ─── Getters: Anti-cheat ───
     public boolean isAntiCheatEnabled() { return antiCheatEnabled; }
-    public boolean isBlockSeedCommand() { return blockSeedCommand; }
-    public boolean isScrambleStructureSeeds() { return scrambleStructureSeeds; }
-    public boolean isOreObfuscation() { return oreObfuscation; }
+    public boolean isBlockSeedCommandEnabled() { return blockSeedCommandEnabled; }
+    public boolean isScrambleStructureSeedsEnabled() { return scrambleStructureSeedsEnabled; }
+    public boolean isOreObfuscationEnabled() { return oreObfuscationEnabled; }
+
+    // Legacy compatibility
+    public boolean isBlockSeedCommand() { return blockSeedCommandEnabled; }
+    public boolean isScrambleStructureSeeds() { return scrambleStructureSeedsEnabled; }
+    public boolean isOreObfuscation() { return oreObfuscationEnabled; }
 
     // ─── Getters: Social ───
     public boolean isSocialEnabled() { return socialEnabled; }
@@ -258,10 +273,17 @@ public class ConfigManager {
     public int getWorldBorderCenterZ() { return worldBorderCenterZ; }
     public double getWorldBorderDamageAmount() { return worldBorderDamageAmount; }
     public int getWorldBorderWarningDistance() { return worldBorderWarningDistance; }
-    public boolean isDisableTpa() { return disableTpa; }
-    public boolean isDisableWarp() { return disableWarp; }
-    public boolean isDisableHomeCommand() { return disableHomeCommand; }
-    public boolean isPlayerHeadDrop() { return playerHeadDrop; }
-    public boolean isNoAdminOp() { return noAdminOp; }
+    public boolean isDisableTpaEnabled() { return disableTpaEnabled; }
+    public boolean isDisableWarpEnabled() { return disableWarpEnabled; }
+    public boolean isDisableHomeCommandEnabled() { return disableHomeCommandEnabled; }
+    public boolean isPlayerHeadDropEnabled() { return playerHeadDropEnabled; }
+    public boolean isNoAdminOpEnabled() { return noAdminOpEnabled; }
+
+    // Legacy compatibility
+    public boolean isDisableTpa() { return disableTpaEnabled; }
+    public boolean isDisableWarp() { return disableWarpEnabled; }
+    public boolean isDisableHomeCommand() { return disableHomeCommandEnabled; }
+    public boolean isPlayerHeadDrop() { return playerHeadDropEnabled; }
+    public boolean isNoAdminOp() { return noAdminOpEnabled; }
     public int getBorderHalfSize() { return worldBorderSize / 2; }
 }

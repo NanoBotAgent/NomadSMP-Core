@@ -209,15 +209,16 @@ public class NomadCommand implements CommandExecutor, TabCompleter {
 
     private void listBuffs(CommandSender sender) {
         DailyBuffModule bm = plugin.getDailyBuffModule();
-        sender.sendMessage("\u00a78\u00a7m                          ");
+        sender.sendMessage("\u00a78\u00a7m ");
         sender.sendMessage("\u00a76\u00a7l Buff Reference (1-50)");
-        sender.sendMessage("\u00a78\u00a7m                          ");
+        sender.sendMessage("\u00a78\u00a7m ");
         for (int i = 1; i < DailyBuffModule.BUFF_NAMES.length; i++) {
-            String active = bm.isBuffActive(i) ? "\u00a7a\u2714 " : "\u00a77  ";
-            sender.sendMessage(active + "\u00a7e" + i + ". \u00a7f" + bm.getBuffName(i)
+            String enabled = plugin.getConfigManager().isBuffEnabled(i) ? "\u00a7a\u2714 " : "\u00a7c\u2718 ";
+            String active = bm.isBuffActive(i) ? "\u00a7a\u25cf " : "\u00a77 ";
+            sender.sendMessage(active + enabled + "\u00a7e" + i + ". \u00a7f" + bm.getBuffName(i)
                 + " \u00a77\u2014 " + bm.getBuffDescription(i));
         }
-        sender.sendMessage("\u00a78\u00a7m                          ");
+        sender.sendMessage("\u00a78\u00a7m ");
     }
 
     private void showStatus(CommandSender sender) {
@@ -225,16 +226,25 @@ public class NomadCommand implements CommandExecutor, TabCompleter {
         List<Integer> buffIds = buffModule.getCurrentBuffIds();
         var config = plugin.getConfigManager();
 
-        sender.sendMessage("\u00a78\u00a7m                          ");
+        sender.sendMessage("\u00a78\u00a7m ");
         sender.sendMessage("\u00a76\u00a7l NomadSMP-Core Status");
-        sender.sendMessage("\u00a78\u00a7m                          ");
+        sender.sendMessage("\u00a78\u00a7m ");
+
+        // Module toggles
+        sender.sendMessage("\u00a7eModules:");
+        sender.sendMessage("  " + onOff(config.isNomadSystemEnabled()) + " \u00a7bNomad System");
+        sender.sendMessage("  " + onOff(config.isDailyBuffsEnabled()) + " \u00a7bDaily Buffs");
+        sender.sendMessage("  " + onOff(config.isProgressionLockEnabled()) + " \u00a7bProgression Lock");
+        sender.sendMessage("  " + onOff(config.isAntiCheatEnabled()) + " \u00a7bAnti-Cheat");
+        sender.sendMessage("  " + onOff(config.isSocialEnabled()) + " \u00a7bSocial");
 
         // Active buffs
         if (buffIds.isEmpty()) {
             sender.sendMessage("\u00a7eActive Buff: \u00a77None");
         } else {
             for (int id : buffIds) {
-                sender.sendMessage("\u00a7eActive Buff: \u00a7a" + buffModule.getBuffName(id)
+                String enabled = config.isBuffEnabled(id) ? "\u00a7a" : "\u00a7c(disabled) ";
+                sender.sendMessage("\u00a7eActive Buff: " + enabled + buffModule.getBuffName(id)
                     + " \u00a77(" + id + ") \u2014 " + buffModule.getBuffDescription(id));
             }
         }
@@ -249,28 +259,50 @@ public class NomadCommand implements CommandExecutor, TabCompleter {
                 case RANDOM -> "random from [" + dc.randomPool + "] (pick " + config.getRandomCount() + ")";
                 case OFF -> "\u00a77disabled";
             };
-            sender.sendMessage("\u00a78  \u00a7b" + day.name().charAt(0) + day.name().substring(1).toLowerCase()
+            sender.sendMessage("\u00a78 \u00a7b" + day.name().charAt(0) + day.name().substring(1).toLowerCase()
                 + ": \u00a7f" + modeStr + " \u00a77\u2014 " + detail);
         }
 
-        // End unlock
-        long daysLeft = plugin.getProgressionLockModule().getDaysUntilEndUnlock();
-        sender.sendMessage("\u00a7eEnd Unlock: \u00a7a" + daysLeft + " days remaining");
+        // Progression lock sub-features
+        sender.sendMessage("\u00a7eProgression Lock Features:");
+        sender.sendMessage("  " + onOff(config.isEndLockEnabled()) + " \u00a7bEnd Lock"
+            + " \u00a77(" + plugin.getProgressionLockModule().getDaysUntilEndUnlock() + " days left)");
+        sender.sendMessage("  " + onOff(config.isNetheriteCraftingBanEnabled()) + " \u00a7bNetherite Crafting Ban");
+        sender.sendMessage("  " + onOff(config.isNetheriteEquipPunishEnabled()) + " \u00a7bNetherite Equip Punish");
+        sender.sendMessage("  " + onOff(config.isBlockGamemodeCommandEnabled()) + " \u00a7bBlock Gamemode Command");
+        sender.sendMessage("  " + onOff(config.isBlockGiveCommandEnabled()) + " \u00a7bBlock Give Command");
 
-        // Border
-        sender.sendMessage("\u00a7eWorld Border: \u00a7a" + config.getWorldBorderSize() + "x" + config.getWorldBorderSize()
-            + " \u00a77at " + config.getWorldBorderCenterX() + "," + config.getWorldBorderCenterZ());
+        // Anti-cheat sub-features
+        sender.sendMessage("\u00a7eAnti-Cheat Features:");
+        sender.sendMessage("  " + onOff(config.isBlockSeedCommandEnabled()) + " \u00a7bBlock Seed Command");
+        sender.sendMessage("  " + onOff(config.isScrambleStructureSeedsEnabled()) + " \u00a7bScramble Structure Seeds");
+        sender.sendMessage("  " + onOff(config.isOreObfuscationEnabled()) + " \u00a7bOre Obfuscation");
+
+        // Social sub-features
+        sender.sendMessage("\u00a7eSocial Features:");
+        sender.sendMessage("  " + onOff(config.isWorldBorderEnabled()) + " \u00a7bWorld Border"
+            + " \u00a77(" + config.getWorldBorderSize() + "x" + config.getWorldBorderSize()
+            + " at " + config.getWorldBorderCenterX() + "," + config.getWorldBorderCenterZ() + ")");
+        sender.sendMessage("  " + onOff(config.isDisableTpaEnabled()) + " \u00a7bDisable TPA");
+        sender.sendMessage("  " + onOff(config.isDisableWarpEnabled()) + " \u00a7bDisable Warp");
+        sender.sendMessage("  " + onOff(config.isDisableHomeCommandEnabled()) + " \u00a7bDisable Home");
+        sender.sendMessage("  " + onOff(config.isPlayerHeadDropEnabled()) + " \u00a7bPlayer Head Drop");
+        sender.sendMessage("  " + onOff(config.isNoAdminOpEnabled()) + " \u00a7bNo Admin OP");
 
         // Migration
         sender.sendMessage("\u00a7eMigration Day: \u00a7a" + config.getMigrateDay() + " at " + config.getMigrateHour() + ":00");
 
-        sender.sendMessage("\u00a78\u00a7m                          ");
+        sender.sendMessage("\u00a78\u00a7m ");
+    }
+
+    private String onOff(boolean value) {
+        return value ? "\u00a7a\u2714" : "\u00a7c\u2718";
     }
 
     private void sendUsage(CommandSender sender) {
-        sender.sendMessage("\u00a78\u00a7m                          ");
+        sender.sendMessage("\u00a78\u00a7m ");
         sender.sendMessage("\u00a76\u00a7l NomadSMP-Core Commands");
-        sender.sendMessage("\u00a78\u00a7m                          ");
+        sender.sendMessage("\u00a78\u00a7m ");
         sender.sendMessage("\u00a7e/nomad reload \u00a77\u2014 Reload config");
         sender.sendMessage("\u00a7e/nomad status \u00a77\u2014 Show all settings");
         sender.sendMessage("\u00a7e/nomad buffs \u00a77\u2014 List all 50 buffs");
@@ -279,7 +311,7 @@ public class NomadCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage("\u00a7e/nomad setborder <size> [cx] [cz] \u00a77\u2014 Set world border");
         sender.sendMessage("\u00a7e/nomad migratenow \u00a77\u2014 Trigger migration now");
         sender.sendMessage("\u00a7e/nomad sethome \u00a77\u2014 Set your home location");
-        sender.sendMessage("\u00a78\u00a7m                          ");
+        sender.sendMessage("\u00a78\u00a7m ");
     }
 
     @Override

@@ -30,7 +30,7 @@ public class SocialModule {
         }
 
         // Strip OP on startup
-        if (config.isNoAdminOp() && config.isBlockGamemodeCommand()) {
+        if (config.isNoAdminOpEnabled()) {
             stripAllOp();
         }
 

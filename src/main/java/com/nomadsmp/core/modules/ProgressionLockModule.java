@@ -19,8 +19,9 @@ public class ProgressionLockModule {
     }
 
     public boolean isEndLocked() {
-        if (!plugin.getConfigManager().isEndLocked()) return false;
-        return getDaysSinceCreation() < plugin.getConfigManager().getEndUnlockDays();
+        var cfg = plugin.getConfigManager();
+        if (!cfg.isEndLockEnabled()) return false;
+        return getDaysSinceCreation() < cfg.getEndUnlockDays();
     }
 
     public long getDaysSinceCreation() {
@@ -35,13 +36,15 @@ public class ProgressionLockModule {
     }
 
     public long getDaysUntilEndUnlock() {
+        var cfg = plugin.getConfigManager();
+        if (!cfg.isEndLockEnabled()) return 0;
         long daysSince = getDaysSinceCreation();
-        long required = plugin.getConfigManager().getEndUnlockDays();
+        long required = cfg.getEndUnlockDays();
         return Math.max(0, required - daysSince);
     }
 
     private void checkEndUnlock() {
-        if (!isEndLocked() && plugin.getConfigManager().isEndLocked()) {
+        if (!isEndLocked() && plugin.getConfigManager().isEndLockEnabled()) {
             org.bukkit.Bukkit.broadcastMessage("\u00a7a[NomadSMP] \u00a7eThe End has been unsealed. Good luck.");
         }
     }

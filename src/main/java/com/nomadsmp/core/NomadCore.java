@@ -40,7 +40,7 @@ public class NomadCore extends JavaPlugin {
         antiCheatModule = new AntiCheatModule(this);
         socialModule = new SocialModule(this);
 
-        // Enable modules
+        // Enable modules (each checks its own enabled flag)
         if (configManager.isNomadSystemEnabled()) {
             nomadModule.enable();
         }
@@ -57,7 +57,7 @@ public class NomadCore extends JavaPlugin {
             socialModule.enable();
         }
 
-        // Register listeners
+        // Register listeners (each listener checks sub-feature toggles internally)
         Bukkit.getPluginManager().registerEvents(new BuffListeners(this), this);
         Bukkit.getPluginManager().registerEvents(new ProgressionListeners(this), this);
         Bukkit.getPluginManager().registerEvents(new AntiCheatListeners(this), this);

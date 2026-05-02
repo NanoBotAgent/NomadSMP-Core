@@ -17,11 +17,11 @@ public class AntiCheatModule {
     public void enable() {
         var config = plugin.getConfigManager();
 
-        if (config.isOreObfuscation()) {
+        if (config.isOreObfuscationEnabled()) {
             configureOreObfuscation();
         }
 
-        if (config.isScrambleStructureSeeds()) {
+        if (config.isScrambleStructureSeedsEnabled()) {
             scrambleStructureSeeds();
         }
 
@@ -35,8 +35,6 @@ public class AntiCheatModule {
                 plugin.getLogger().warning("paper-world-defaults.yml not found, skipping ore obfuscation config.");
                 return;
             }
-            // Paper's anti-xray is configured via paper-world-defaults.yml
-            // We log the recommendation but don't auto-modify to avoid corrupting YAML
             plugin.getLogger().info("Ore obfuscation: ensure paper-world-defaults.yml has anticheat.anti-xray.enabled=true and engine-mode=2");
         } catch (Exception e) {
             plugin.getLogger().warning("Failed to configure ore obfuscation: " + e.getMessage());

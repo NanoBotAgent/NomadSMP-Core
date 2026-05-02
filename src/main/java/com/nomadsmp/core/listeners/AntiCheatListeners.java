@@ -17,7 +17,8 @@ public class AntiCheatListeners implements Listener {
     // ─── Block /seed command ───
     @EventHandler
     public void onSeedCommand(PlayerCommandPreprocessEvent event) {
-        if (!plugin.getConfigManager().isBlockSeedCommand()) return;
+        if (!plugin.getConfigManager().isAntiCheatEnabled()) return;
+        if (!plugin.getConfigManager().isBlockSeedCommandEnabled()) return;
         String cmd = event.getMessage().toLowerCase().trim();
         if (cmd.equals("/seed") || cmd.startsWith("/seed ")) {
             event.setCancelled(true);
@@ -29,9 +30,10 @@ public class AntiCheatListeners implements Listener {
     @EventHandler
     public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
         var config = plugin.getConfigManager();
+        if (!config.isAntiCheatEnabled()) return;
         String cmd = event.getMessage().toLowerCase().trim().split(" ")[0];
 
-        if (config.isBlockGamemodeCommand() && isBlockedCommand(cmd)) {
+        if (config.isBlockGamemodeCommandEnabled() && isBlockedCommand(cmd)) {
             event.setCancelled(true);
             event.getPlayer().sendMessage("\u00a7c[NomadSMP] \u00a7eAdmin commands are disabled on this server.");
         }
@@ -40,9 +42,10 @@ public class AntiCheatListeners implements Listener {
     @EventHandler
     public void onServerCommand(ServerCommandEvent event) {
         var config = plugin.getConfigManager();
+        if (!config.isAntiCheatEnabled()) return;
         String cmd = event.getCommand().toLowerCase().trim().split(" ")[0];
 
-        if (config.isBlockGamemodeCommand() && isBlockedCommand(cmd)) {
+        if (config.isBlockGamemodeCommandEnabled() && isBlockedCommand(cmd)) {
             event.setCancelled(true);
         }
     }

@@ -31,7 +31,8 @@ public class SocialListeners implements Listener {
     // ─── Player Head Drop on PvP Kill ───
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent event) {
-        if (!plugin.getConfigManager().isPlayerHeadDrop()) return;
+        if (!plugin.getConfigManager().isSocialEnabled()) return;
+        if (!plugin.getConfigManager().isPlayerHeadDropEnabled()) return;
         Player victim = event.getEntity();
         Player killer = victim.getKiller();
         if (killer == null || killer == victim) return; // Not PvP
@@ -49,18 +50,19 @@ public class SocialListeners implements Listener {
     // ─── Block Teleport Commands ───
     @EventHandler
     public void onCommand(PlayerCommandPreprocessEvent event) {
-        String cmd = event.getMessage().toLowerCase().trim().split(" ")[0];
+        if (!plugin.getConfigManager().isSocialEnabled()) return;
         var config = plugin.getConfigManager();
+        String cmd = event.getMessage().toLowerCase().trim().split(" ")[0];
 
-        if (config.isDisableTpa() && TPA_COMMANDS.contains(cmd)) {
+        if (config.isDisableTpaEnabled() && TPA_COMMANDS.contains(cmd)) {
             event.setCancelled(true);
             event.getPlayer().sendMessage("\u00a7c[NomadSMP] \u00a7eTeleportation is disabled. Walk there.");
         }
-        if (config.isDisableWarp() && WARP_COMMANDS.contains(cmd)) {
+        if (config.isDisableWarpEnabled() && WARP_COMMANDS.contains(cmd)) {
             event.setCancelled(true);
             event.getPlayer().sendMessage("\u00a7c[NomadSMP] \u00a7eTeleportation is disabled. Walk there.");
         }
-        if (config.isDisableHomeCommand() && HOME_COMMANDS.contains(cmd)) {
+        if (config.isDisableHomeCommandEnabled() && HOME_COMMANDS.contains(cmd)) {
             event.setCancelled(true);
             event.getPlayer().sendMessage("\u00a7c[NomadSMP] \u00a7eTeleportation is disabled. Walk there.");
         }
@@ -69,11 +71,11 @@ public class SocialListeners implements Listener {
     // ─── De-op on login ───
     @EventHandler
     public void onLogin(PlayerLoginEvent event) {
-        if (plugin.getConfigManager().isNoAdminOp() && plugin.getConfigManager().isBlockGamemodeCommand()) {
-            if (event.getPlayer().isOp()) {
-                event.getPlayer().setOp(false);
-                plugin.getLogger().info("De-opped on login: " + event.getPlayer().getName());
-            }
+        if (!plugin.getConfigManager().isSocialEnabled()) return;
+        if (!plugin.getConfigManager().isNoAdminOpEnabled()) return;
+        if (event.getPlayer().isOp()) {
+            event.getPlayer().setOp(false);
+            plugin.getLogger().info("De-opped on login: " + event.getPlayer().getName());
         }
     }
 }
