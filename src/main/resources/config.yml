@@ -6,203 +6,137 @@
 nomad-system:
   enabled: true
   migrate-day: MONDAY
-  migrate-hour: 0                # 24h clock (0 = midnight)
-  house-radius: 16               # Half-width of the schematic box saved per player
-  safe-land-check: true          # Abort paste if Y < min-safe-y
-  min-safe-y: 60                 # Minimum Y for safe paste location
-  migration-check-minutes: 5     # How often to check if it is migration time
-  migration-warning-minutes: 5   # How many minutes warning before migration
+  migrate-hour: 0
+  house-radius: 16
+  safe-land-check: true
+  min-safe-y: 60
+  migration-check-minutes: 5
+  migration-warning-minutes: 5
 
 daily-buffs:
   enabled: true
   broadcast-on-join: true
   broadcast-color: "\u00a76"
-  rollover-check-seconds: 60    # How often to check for midnight buff change
-
-  # Each day: mode = fixed | random | off
-  monday:
-    mode: fixed
-    buffs: [2]
-    pool: []
-  tuesday:
-    mode: fixed
-    buffs: [3]
-    pool: []
-  wednesday:
-    mode: fixed
-    buffs: [1]
-    pool: []
-  thursday:
-    mode: fixed
-    buffs: [2]
-    pool: []
-  friday:
-    mode: fixed
-    buffs: [3]
-    pool: []
-  saturday:
-    mode: random
-    buffs: []
-    pool: [1, 2, 3, 4, 5, 6, 7, 8]
-  sunday:
-    mode: random
-    buffs: []
-    pool: [1, 2, 3, 4, 5, 6, 7, 8]
-
-  # How many buffs to pick when mode is random
+  rollover-check-seconds: 60
   random-count: 1
 
-  # ─── Per-buff tunables (all 30+ hardcoded values) ───
-  buff-settings:
-    # 1: Titanium
-    titanium-durability-cancel: true
+  # ─── Per-day schedule: mode = fixed | random | off ───
+  monday:    { mode: fixed,  buffs: [2],              pool: [] }
+  tuesday:   { mode: fixed,  buffs: [3],              pool: [] }
+  wednesday: { mode: fixed,  buffs: [1],              pool: [] }
+  thursday:  { mode: fixed,  buffs: [2],              pool: [] }
+  friday:    { mode: fixed,  buffs: [3],              pool: [] }
+  saturday:  { mode: random, buffs: [],                pool: [1, 2, 3, 4, 5, 6, 7, 8] }
+  sunday:    { mode: random, buffs: [],                pool: [1, 2, 3, 4, 5, 6, 7, 8] }
 
-    # 2: Power Miner — Haste amplifier (0 = Haste I, 1 = Haste II)
-    power-miner-haste-amplifier: 0
-
-    # 3: Roadrunner — movement speed modifier (0.12 = ~12% faster)
-    roadrunner-speed-modifier: 0.12
-
-    # 4: Featherweight / 41: Parachute — just Slow Falling amplifier
-    featherweight-amplifier: 0
-
-    # 5: Iron Lung — Water Breathing amplifier
-    iron-lung-amplifier: 0
-
-    # 6: Pyro — Fire Resistance amplifier
-    pyro-amplifier: 0
-
-    # 7: Night Owl — Night Vision amplifier
-    night-owl-amplifier: 0
-
-    # 8: Looter — drop multiplier (2 = double, 3 = triple)
-    looter-drop-multiplier: 2
-
-    # 9: Bountiful Harvest
-    bountiful-growth-boost: true
-
-    # 10: Lucky Fisher — not yet implemented (listener-driven)
-    # 11: Magnet
-    magnet-range: 5               # Blocks to pull items from
-    magnet-strength: 0.5          # Pull velocity
-
-    # 12: Chef — cancel hunger drain
-    chef-cancel-hunger: true
-
-    # 13: Blacksmith — auto-smelt ores
-    blacksmith-auto-smelt: true
-
-    # 14: Timber
-    timber-max-blocks: 50         # Max logs broken per tree
-
-    # 15: Vein Miner
-    vein-miner-max-blocks: 32     # Max ores broken per vein
-
-    # 16: Trophy Hunter — mob head drop chance (0.0-1.0)
-    trophy-hunter-chance: 1.0
-
-    # 17: Dolphin — swim speed modifier
-    dolphin-speed-modifier: 0.12
-
-    # 18: Gravity — Jump Boost amplifier (1 = Jump II)
-    gravity-jump-amplifier: 1
-
-    # 19: Vampire — HP healed per kill
-    vampire-heal-amount: 1.0
-
-    # 20: XP Junkie — XP multiplier
-    xp-junkie-multiplier: 2
-
-    # 21: Merchant — villager discount fraction (0.5 = 50% off)
-    merchant-discount: 0.5
-
-    # 22: Tank — Resistance amplifier
-    tank-resistance-amplifier: 0
-
-    # 23: Glass Cannon
-    glass-cannon-damage-multiplier: 2.0
-    glass-cannon-damage-taken-multiplier: 2.0
-
-    # 24: Archer — free arrows
-    archer-free-arrows: true
-
-    # 25: Librarian — enchant cost in levels
-    librarian-enchant-cost: 1
-
-    # 26: Ninja — Invisibility amplifier
-    ninja-invisibility-amplifier: 0
-
-    # 27: Spider — wall climb
-    spider-climb-velocity: 0.3
-
-    # 28: Ender — pearl fall damage immunity window in ms
-    ender-pearl-window-ms: 1000
-
-    # 29: Healthy — extra hearts (2.0 = 1 heart, 10.0 = 5 hearts)
-    healthy-extra-hearts: 10.0
-
-    # 30: Medic — Regen amplifier (1 = Regen II)
-    medic-regen-amplifier: 1
-
-    # 31: Sonic — movement speed modifier
-    sonic-speed-modifier: 0.4
-
-    # 32: Rich — gold nugget drop chance (0.0-1.0)
-    rich-nugget-chance: 0.1
-
-    # 33: Scavenger
-    scavenger-chance: 0.05        # Drop chance per grass break
-    scavenger-loot: [STRING, WHEAT_SEEDS, POPPY, DANDELION, FEATHER]
-
-    # 34: Glowstick — Glowing amplifier
-    glowstick-amplifier: 0
-
-    # 35: Gardener — bone meal radius (1 = 3x3, 2 = 5x5)
-    gardener-radius: 1
-
-    # 36: Snowman — snow trail + fire immune
-    snowman-snow-trail: true
-
-    # 37: Friendly — peaceful mob attraction range
-    friendly-attraction-range: 5
-
-    # 38: Slimy — bounce velocity multiplier
-    slimy-bounce-multiplier: 0.05
-
-    # 39: Thor — lightning strike chance (0.0-1.0)
-    thor-lightning-chance: 0.05
-
-    # 40: Teleporter
-    teleporter-distance: 5        # Blocks to teleport forward
-    teleporter-cooldown-ms: 10000 # Cooldown in milliseconds
-
-    # 42: Unstoppable — immune causes (list of DamageCause names)
-    unstoppable-immune-causes: [WITHER, SLOW, BLINDNESS]
-
-    # 43: Warrior — Strength amplifier
-    warrior-strength-amplifier: 0
-
-    # 44: Inertia — horizontal velocity threshold to detect knockback
-    inertia-velocity-threshold: 0.3
-
-    # 45: Gravity Well
-    gravity-well-range: 5         # Pull range in blocks
-    gravity-well-strength: 0.3    # Pull velocity
-
-    # 46: Alchemist — potion duration multiplier
-    alchemist-duration-multiplier: 3
-
-    # 47: Builder — block refund chance (0.0-1.0)
-    builder-refund-chance: 0.2
-
-    # 48: Double Jump
-    double-jump-velocity: 0.8
-
-    # 49: Whale — infinite oxygen
-    whale-infinite-oxygen: true
-
-    # 50: Pacifist — Regen amplifier
-    pacifist-regen-amplifier: 3
+  # ─── Per-buff settings — every tunable grouped under its buff ───
+  buffs:
+    1-titanium:
+      enabled: true                          # If false, buff does nothing even when active
+    2-power-miner:
+      haste-amplifier: 0                     # 0=Haste I, 1=Haste II, etc.
+    3-roadrunner:
+      speed-modifier: 0.12                   # Movement speed attribute addition
+    4-featherweight:
+      amplifier: 0                           # Slow Falling amplifier
+    5-iron-lung:
+      amplifier: 0                           # Water Breathing amplifier
+    6-pyro:
+      amplifier: 0                           # Fire Resistance amplifier
+    7-night-owl:
+      amplifier: 0                           # Night Vision amplifier
+    8-looter:
+      drop-multiplier: 2                     # 2=double drops, 3=triple, etc.
+    9-bountiful-harvest:
+      growth-boost: true                     # Auto bone-meal on crop growth
+    10-lucky-fisher:
+      enabled: true                          # (placeholder — listener-driven)
+    11-magnet:
+      range: 5                               # Blocks to pull items from
+      pull-strength: 0.5                     # Pull velocity
+    12-chef:
+      cancel-hunger: true                    # Cancel hunger drain
+    13-blacksmith:
+      auto-smelt: true                       # Auto-smelt raw ores
+    14-timber:
+      max-blocks: 50                         # Max logs per tree chop
+    15-vein-miner:
+      max-blocks: 32                         # Max ores per vein break
+    16-trophy-hunter:
+      head-drop-chance: 1.0                  # 0.0–1.0 chance for mob head
+    17-dolphin:
+      speed-modifier: 0.12                   # Swim speed attribute addition
+    18-gravity:
+      jump-amplifier: 1                      # 1=Jump Boost II
+    19-vampire:
+      heal-per-kill: 1.0                     # HP restored per kill
+    20-xp-junkie:
+      xp-multiplier: 2                       # XP gain multiplier
+    21-merchant:
+      discount: 0.5                          # 0.5 = 50% villager discount
+    22-tank:
+      resistance-amplifier: 0                # 0=Resistance I
+    23-glass-cannon:
+      damage-dealt-multiplier: 2.0           # Outgoing damage multiplier
+      damage-taken-multiplier: 2.0           # Incoming damage multiplier
+    24-archer:
+      free-arrows: true                      # Arrows cost nothing
+    25-librarian:
+      enchant-cost: 1                        # Level cost for enchanting
+    26-ninja:
+      amplifier: 0                           # Invisibility amplifier
+    27-spider:
+      climb-velocity: 0.3                    # Upward velocity when wall-climbing
+    28-ender:
+      pearl-fall-window-ms: 1000            # Fall immunity window after pearl (ms)
+    29-healthy:
+      extra-hearts: 10.0                     # 2.0=1 heart, 10.0=5 hearts
+    30-medic:
+      regen-amplifier: 1                     # 1=Regen II
+    31-sonic:
+      speed-modifier: 0.4                    # Movement speed attribute addition
+    32-rich:
+      nugget-chance: 0.1                     # 0.0–1.0 gold nugget drop chance
+    33-scavenger:
+      drop-chance: 0.05                      # Per grass break
+      loot: [STRING, WHEAT_SEEDS, POPPY, DANDELION, FEATHER]
+    34-glowstick:
+      amplifier: 0                           # Glowing amplifier
+    35-gardener:
+      bone-meal-radius: 1                    # 1=3x3, 2=5x5
+    36-snowman:
+      snow-trail: true                       # Leave snow when walking
+      fire-immune: true                      # Cancel fire damage
+    37-friendly:
+      attraction-range: 5                    # Peaceful mob attraction range
+    38-slimy:
+      bounce-multiplier: 0.05               # Fall distance → upward velocity
+    39-thor:
+      lightning-chance: 0.05                 # 0.0–1.0 per hit
+    40-teleporter:
+      distance: 5                            # Blocks forward on sneak
+      cooldown-ms: 10000                     # Cooldown in milliseconds
+    41-parachute:
+      amplifier: 0                           # Slow Falling amplifier
+    42-unstoppable:
+      immune-causes: [WITHER, SLOW, BLINDNESS]
+    43-warrior:
+      strength-amplifier: 0                  # 0=Strength I
+    44-inertia:
+      velocity-threshold: 0.3               # Horizontal vel above = knockback
+    45-gravity-well:
+      range: 5                               # Pull range in blocks
+      pull-strength: 0.3                     # Pull velocity
+    46-alchemist:
+      duration-multiplier: 3                 # Potion duration multiplier
+    47-builder:
+      refund-chance: 0.2                     # 0.0–1.0 block refund chance
+    48-double-jump:
+      velocity: 0.8                          # Upward launch velocity
+    49-whale:
+      infinite-oxygen: true                  # Never lose air underwater
+    50-pacifist:
+      regen-amplifier: 3                     # 3=Regen IV
 
 progression-lock:
   enabled: true
@@ -211,8 +145,8 @@ progression-lock:
   server-start-date: "2025-01-01"
   netherite-crafting-banned: true
   netherite-equip-punish: true
-  netherite-punish-duration-ticks: 100  # 100 ticks = 5 seconds
-  netherite-punish-amplifier: 4         # 4 = Slowness V
+  netherite-punish-duration-ticks: 100
+  netherite-punish-amplifier: 4
   block-gamemode-command: true
   block-give-command: true
 
@@ -236,21 +170,3 @@ social:
   disable-home-command: true
   player-head-drop: true
   no-admin-op: true
-
-# ─────────────────────────────────────────────
-# BUFF REFERENCE (IDs 1-50)
-# ─────────────────────────────────────────────
-#  1 Titanium       2 Power Miner    3 Roadrunner      4 Featherweight
-#  5 Iron Lung      6 Pyro           7 Night Owl       8 Looter
-#  9 Bountiful      10 Lucky Fisher  11 Magnet         12 Chef
-# 13 Blacksmith     14 Timber        15 Vein Miner     16 Trophy Hunter
-# 17 Dolphin        18 Gravity       19 Vampire        20 XP Junkie
-# 21 Merchant       22 Tank          23 Glass Cannon   24 Archer
-# 25 Librarian      26 Ninja         27 Spider         28 Ender
-# 29 Healthy        30 Medic         31 Sonic          32 Rich
-# 33 Scavenger      34 Glowstick     35 Gardener       36 Snowman
-# 37 Friendly       38 Slimy         39 Thor           40 Teleporter
-# 41 Parachute      42 Unstoppable   43 Warrior        44 Inertia
-# 45 Gravity Well   46 Alchemist     47 Builder        48 Double Jump
-# 49 Whale          50 Pacifist
-# ─────────────────────────────────────────────
