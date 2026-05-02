@@ -1,29 +1,47 @@
 package com.nomadsmp.core.modules;
 
 import com.nomadsmp.core.NomadCore;
+
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 
 public class ProgressionLockModule {
-    private final NomadCore plugin;
-    public ProgressionLockModule(NomadCore plugin) { this.plugin = plugin; }
-    public void enable() { plugin.getLogger().info("Progression lock module enabled."); }
 
-    public boolean isEndLocked() {
-        if (!plugin.cfg().isEndLocked()) return false;
-        try {
-            LocalDate start = LocalDate.parse(plugin.cfg().getServerStartDate(), DateTimeFormatter.ISO_LOCAL_DATE);
-            long days = ChronoUnit.DAYS.between(start, LocalDate.now());
-            return days < plugin.cfg().getEndUnlockDays();
-        } catch (Exception e) { return plugin.cfg().isEndLocked(); }
+    private final NomadCore plugin;
+
+    public ProgressionLockModule(NomadCore plugin) {
+        this.plugin = plugin;
     }
 
-    public long daysUntilEndUnlock() {
+    public void enable() {
+        plugin.getLogger().info("Progression lock module enabled.");
+        checkEndUnlock();
+    }
+
+    public boolean isEndLocked() {
+        if (!plugin.getConfigManager().isEndLocked()) return false;
+        return getDaysSinceCreation() < plugin.getConfigManager().getEndUnlockDays();
+    }
+
+    public long getDaysSinceCreation() {
+        String startDate = plugin.getConfig().getString("server-start-date", "2025-01-01");
         try {
-            LocalDate start = LocalDate.parse(plugin.cfg().getServerStartDate(), DateTimeFormatter.ISO_LOCAL_DATE);
-            long days = ChronoUnit.DAYS.between(start, LocalDate.now());
-            return Math.max(0, plugin.cfg().getEndUnlockDays() - days);
-        } catch (Exception e) { return plugin.cfg().getEndUnlockDays(); }
+            LocalDate start = LocalDate.parse(startDate);
+            return ChronoUnit.DAYS.between(start, LocalDate.now());
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    public long getDaysUntilEndUnlock() {
+        long daysSince = getDaysSinceCreation();
+        long required = plugin.getConfigManager().getEndUnlockDays();
+        return Math.max(0, required - daysSince);
+    }
+
+    private void checkEndUnlock() {
+        if (!isEndLocked() && plugin.getConfigManager().isEndLocked()) {
+            org.bukkit.Bukkit.broadcastMessage("\u00a7a[NomadSMP] \u00a7eThe End has been unsealed. Good luck.");
+        }
     }
 }
