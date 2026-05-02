@@ -1,16 +1,16 @@
 package com.nomadsmp.core.listeners;
 
 import com.nomadsmp.core.NomadCore;
-import org.bukkit.Material;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.event.player.PlayerPortalEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
-import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -23,21 +23,18 @@ public class ProgressionListeners implements Listener {
         this.plugin = plugin;
     }
 
-    // ─── End Lockdown ───
     @EventHandler
     public void onPortal(PlayerPortalEvent event) {
         if (!plugin.getConfigManager().isProgressionLockEnabled()) return;
         if (plugin.getProgressionLockModule().isEndLocked()
                 && event.getCause() == PlayerTeleportEvent.TeleportCause.NETHER_PORTAL
-                && event.getTo() != null
-                && event.getTo().getWorld() != null
+                && event.getTo() != null && event.getTo().getWorld() != null
                 && event.getTo().getWorld().getEnvironment() == org.bukkit.World.Environment.THE_END) {
             event.setCancelled(true);
             event.getPlayer().sendMessage("\u00a7c[NomadSMP] \u00a7eThe End is sealed. Survive longer first.");
         }
     }
 
-    // ─── Netherite Crafting Ban ───
     @EventHandler
     public void onCraft(PrepareItemCraftEvent event) {
         if (!plugin.getConfigManager().isNetheriteCraftingBanned()) return;
@@ -47,7 +44,6 @@ public class ProgressionListeners implements Listener {
         }
     }
 
-    // ─── Netherite Smithing Ban ───
     @EventHandler
     public void onSmithingClick(InventoryClickEvent event) {
         if (!plugin.getConfigManager().isNetheriteCraftingBanned()) return;
@@ -58,7 +54,6 @@ public class ProgressionListeners implements Listener {
         }
     }
 
-    // ─── Netherite Equip Punishment ───
     @EventHandler
     public void onItemHeld(PlayerItemHeldEvent event) {
         checkNetheritePunish(event.getPlayer());
