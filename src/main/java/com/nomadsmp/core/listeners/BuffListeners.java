@@ -1,7 +1,6 @@
 package com.nomadsmp.core.listeners;
 
 import com.nomadsmp.core.NomadCore;
-import com.nomadsmp.core.modules.DailyBuffModule;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
@@ -41,30 +40,30 @@ public class BuffListeners implements Listener {
 
     private boolean isActive(int id) { return plugin.getDailyBuffModule().isBuffActive(id); }
 
-    // Buff 1: Titanium
+    // Buff 1: Titanium — no durability loss
     @EventHandler
     public void onItemDamage(PlayerItemDamageEvent event) {
         if (isActive(1)) event.setCancelled(true);
     }
 
-    // Buffs 8, 16, 19, 32: Entity death effects
+    // Buff 8: Looter, 16: Trophy Hunter, 19: Vampire, 32: Rich
     @EventHandler
     public void onEntityDeath(EntityDeathEvent event) {
         Player killer = event.getEntity().getKiller();
         if (killer == null) return;
 
-        if (isActive(8)) { // Looter
+        if (isActive(8)) {
             List<ItemStack> extra = new ArrayList<>();
             for (ItemStack drop : event.getDrops()) extra.add(drop.clone());
             event.getDrops().addAll(extra);
         }
 
-        if (isActive(19)) { // Vampire
-            double maxHealth = killer.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
+        if (isActive(19)) {
+            double maxHealth = killer.getAttribute(Attribute.MAX_HEALTH).getValue();
             killer.setHealth(Math.min(killer.getHealth() + 1.0, maxHealth));
         }
 
-        if (isActive(32) && Math.random() < 0.1) { // Rich
+        if (isActive(32) && Math.random() < 0.1) {
             event.getDrops().add(new ItemStack(Material.GOLD_NUGGET));
         }
     }
@@ -73,8 +72,10 @@ public class BuffListeners implements Listener {
     @EventHandler
     public void onBlockGrow(BlockGrowEvent event) {
         if (!isActive(9)) return;
+        // Re-apply bone meal to accelerate growth
+        Block block = event.getBlock();
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            try { event.getBlock().applyBoneMeal(); } catch (Exception ignored) {}
+            try { block.applyBoneMeal(BlockFace.UP); } catch (Exception ignored) {}
         }, 1L);
     }
 
@@ -101,19 +102,18 @@ public class BuffListeners implements Listener {
         }
     }
 
-    // Buff 14: Timber
+    // Buff 14: Timber, Buff 15: Vein Miner
     @EventHandler(priority = EventPriority.HIGH)
-    public void onTimber(BlockBreakEvent event) {
-        if (!isActive(14) || !Tag.LOGS.isTagged(event.getBlock().getType())) return;
-        bfsBreak(event.getBlock(), event.getBlock().getType(), 50, event.getPlayer());
-    }
-
-    // Buff 15: Vein Miner
-    @EventHandler(priority = EventPriority.HIGH)
-    public void onVeinMiner(BlockBreakEvent event) {
-        Material type = event.getBlock().getType();
-        if (!isActive(15) || !type.name().endsWith("_ORE")) return;
-        bfsBreak(event.getBlock(), type, 32, event.getPlayer());
+    public void onBlockBreak(BlockBreakEvent event) {
+        Block block = event.getBlock();
+        // Buff 14: Timber
+        if (isActive(14) && Tag.LOGS.isTagged(block.getType())) {
+            bfsBreak(block, block.getType(), 50, event.getPlayer());
+        }
+        // Buff 15: Vein Miner
+        if (isActive(15) && block.getType().name().endsWith("_ORE")) {
+            bfsBreak(block, block.getType(), 32, event.getPlayer());
+        }
     }
 
     private void bfsBreak(Block start, Material target, int maxBlocks, Player player) {
@@ -142,7 +142,7 @@ public class BuffListeners implements Listener {
         if (isActive(20)) event.setAmount(event.getAmount() * 2);
     }
 
-    // Buffs 23, 39, 50: Damage modifications
+    // Buff 23: Glass Cannon (damage dealt), 39: Thor, 50: Pacifist
     @EventHandler
     public void onDamageByEntity(EntityDamageByEntityEvent event) {
         if (isActive(23) && event.getDamager() instanceof Player) {
@@ -158,7 +158,7 @@ public class BuffListeners implements Listener {
         }
     }
 
-    // Buffs 23, 28, 36, 38, 42: Damage received
+    // Buff 23 (damage taken), 28 (ender pearl fall), 36 (fire immune), 38 (slimy bounce), 42 (wither immune)
     @EventHandler
     public void onEntityDamage(EntityDamageEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
@@ -189,7 +189,7 @@ public class BuffListeners implements Listener {
         }
     }
 
-    // Buff 44: Inertia — cancel knockback via EntityKnockbackEvent
+    // Buff 44: Inertia — cancel knockback
     @EventHandler
     public void onKnockback(EntityKnockbackEvent event) {
         if (isActive(44) && event.getEntity() instanceof Player) {
@@ -203,7 +203,7 @@ public class BuffListeners implements Listener {
         if (isActive(25)) event.setExpLevelCost(1);
     }
 
-    // Buff 27: Spider — wall climbing
+    // Buff 27: Spider (wall climb), 36: Snowman trail, 48: Double Jump reset
     @EventHandler
     public void onPlayerMove(PlayerMoveEvent event) {
         Player player = event.getPlayer();
@@ -213,15 +213,15 @@ public class BuffListeners implements Listener {
                 player.setVelocity(player.getVelocity().setY(0.3));
             }
         }
-        // Buff 36: Snowman trail
         if (isActive(36)) {
             Block prev = event.getFrom().getBlock();
             if (prev.getType() == Material.AIR && prev.getRelative(BlockFace.DOWN).getType().isSolid()) {
                 prev.setType(Material.SNOW);
             }
         }
-        // Buff 48: Double Jump reset
-        if (isActive(48) && player.isOnGround()) hasDoubleJumped.remove(player.getUniqueId());
+        if (isActive(48) && player.isOnGround()) {
+            hasDoubleJumped.remove(player.getUniqueId());
+        }
     }
 
     // Buff 33: Scavenger
@@ -240,7 +240,7 @@ public class BuffListeners implements Listener {
         }
     }
 
-    // Buff 35: Gardener — 3x3 bone meal
+    // Buff 35: Gardener — 3x3 bone meal (MC 26.1.2: applyBoneMeal takes BlockFace)
     @EventHandler
     public void onPlayerInteract(PlayerInteractEvent event) {
         if (!isActive(35) || event.getAction() != org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK) return;
@@ -251,7 +251,7 @@ public class BuffListeners implements Listener {
         for (int dx = -1; dx <= 1; dx++) {
             for (int dz = -1; dz <= 1; dz++) {
                 Block relative = target.getRelative(dx, 0, dz);
-                try { relative.applyBoneMeal(); } catch (Exception ignored) {}
+                try { relative.applyBoneMeal(BlockFace.UP); } catch (Exception ignored) {}
             }
         }
     }
