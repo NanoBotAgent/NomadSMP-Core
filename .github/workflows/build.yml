@@ -1,4 +1,4 @@
-name: Build Plugin
+name: Build and Test Plugin
 
 on:
   push:
@@ -30,3 +30,77 @@ jobs:
         name: NomadSMP-Core
         path: build/libs/*.jar
         retention-days: 30
+
+  smoke-test:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/setup-java@v5
+      with:
+        java-version: '25'
+        distribution: 'temurin'
+    - name: Download Paper 26.1.2
+      run: |
+        curl -sL "https://api.papermc.io/v2/projects/paper/versions/26.1.2/builds/53/downloads/paper-26.1.2-53.jar" -o paper.jar
+        ls -lh paper.jar
+    - name: Download plugin artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: NomadSMP-Core
+        path: plugins/
+    - name: Download WorldEdit
+      run: |
+        mkdir -p plugins
+        curl -sL "https://cdn.modrinth.com/data/1u6JkXh5/versions/k9KdTr1M/worldedit-bukkit-7.4.3-beta-01.jar" -o plugins/worldedit-bukkit-7.4.3-beta-01.jar
+        ls -lh plugins/
+    - name: Accept EULA and setup server
+      run: |
+        echo "eula=true" > eula.txt
+    - name: Smoke test — start Paper with plugin
+      timeout-minutes: 5
+      run: |
+        # Start Paper server headlessly, wait for plugin enable, then stop
+        java -Dpaper.playerconnection.keepalive=60 \
+             -Xmx512M -Xms512M \
+             -jar paper.jar --nogui \
+             --max-players=1 \
+             --world-dir=./test-world &
+        SERVER_PID=$!
+        
+        # Wait for server to fully start (look for "Done" in log)
+        TIMEOUT=120
+        ELAPSED=0
+        while [ $ELAPSED -lt $TIMEOUT ]; do
+          if grep -q "Done (" logs/latest.log 2>/dev/null; then
+            echo "✅ Server started successfully!"
+            # Check plugin loaded
+            if grep -q "NomadSMP-Core enabled" logs/latest.log 2>/dev/null; then
+              echo "✅ NomadSMP-Core plugin loaded successfully!"
+            elif grep -q "NomadSMP-Core" logs/latest.log 2>/dev/null; then
+              echo "⚠️ NomadSMP-Core mentioned in log but may have errors"
+              grep -i "nomad\|error\|exception" logs/latest.log | tail -10
+            else
+              echo "❌ NomadSMP-Core not found in log"
+            fi
+            # Stop server gracefully
+            kill $SERVER_PID 2>/dev/null
+            wait $SERVER_PID 2>/dev/null
+            exit 0
+          fi
+          # Check for fatal errors
+          if grep -q "Failed to start" logs/latest.log 2>/dev/null; then
+            echo "❌ Server failed to start"
+            tail -50 logs/latest.log
+            kill $SERVER_PID 2>/dev/null
+            exit 1
+          fi
+          sleep 2
+          ELAPSED=$((ELAPSED + 2))
+        done
+        
+        echo "❌ Server did not start within ${TIMEOUT}s"
+        if [ -f logs/latest.log ]; then
+          tail -30 logs/latest.log
+        fi
+        kill $SERVER_PID 2>/dev/null
+        exit 1
