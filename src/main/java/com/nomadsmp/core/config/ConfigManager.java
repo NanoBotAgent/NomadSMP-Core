@@ -13,9 +13,9 @@ public class ConfigManager {
 
     private final NomadCore plugin;
     private FileConfiguration config;
-    private String bs = "daily-buffs.buff-settings."; // prefix shorthand
+    private static final String BUFFS = "daily-buffs.buffs.";
 
-    // Nomad system
+    // ─── Nomad system ───
     private boolean nomadSystemEnabled;
     private DayOfWeek migrateDay;
     private int migrateHour;
@@ -25,7 +25,7 @@ public class ConfigManager {
     private int migrationCheckMinutes;
     private int migrationWarningMinutes;
 
-    // Daily buffs
+    // ─── Daily buffs ───
     private boolean dailyBuffsEnabled;
     private boolean broadcastOnJoin;
     private String broadcastColor;
@@ -33,7 +33,7 @@ public class ConfigManager {
     private int rolloverCheckSeconds;
     private DayConfig[] dayConfigs;
 
-    // Progression lock
+    // ─── Progression lock ───
     private boolean progressionLockEnabled;
     private boolean endLocked;
     private int endUnlockDays;
@@ -45,13 +45,13 @@ public class ConfigManager {
     private boolean blockGamemodeCommand;
     private boolean blockGiveCommand;
 
-    // Anti-cheat
+    // ─── Anti-cheat ───
     private boolean antiCheatEnabled;
     private boolean blockSeedCommand;
     private boolean scrambleStructureSeeds;
     private boolean oreObfuscation;
 
-    // Social
+    // ─── Social ───
     private boolean socialEnabled;
     private boolean worldBorderEnabled;
     private int worldBorderSize;
@@ -65,6 +65,21 @@ public class ConfigManager {
     private boolean playerHeadDrop;
     private boolean noAdminOp;
 
+    // ─── Per-buff section keys (1-titanium, 2-power-miner, etc.) ───
+    private static final String[] BUFF_KEYS = {
+        "", "1-titanium", "2-power-miner", "3-roadrunner", "4-featherweight",
+        "5-iron-lung", "6-pyro", "7-night-owl", "8-looter", "9-bountiful-harvest",
+        "10-lucky-fisher", "11-magnet", "12-chef", "13-blacksmith", "14-timber",
+        "15-vein-miner", "16-trophy-hunter", "17-dolphin", "18-gravity", "19-vampire",
+        "20-xp-junkie", "21-merchant", "22-tank", "23-glass-cannon", "24-archer",
+        "25-librarian", "26-ninja", "27-spider", "28-ender", "29-healthy",
+        "30-medic", "31-sonic", "32-rich", "33-scavenger", "34-glowstick",
+        "35-gardener", "36-snowman", "37-friendly", "38-slimy", "39-thor",
+        "40-teleporter", "41-parachute", "42-unstoppable", "43-warrior", "44-inertia",
+        "45-gravity-well", "46-alchemist", "47-builder", "48-double-jump", "49-whale",
+        "50-pacifist"
+    };
+
     public enum BuffMode { FIXED, RANDOM, OFF }
 
     public static class DayConfig {
@@ -77,11 +92,55 @@ public class ConfigManager {
     }
 
     public ConfigManager(NomadCore plugin) { this.plugin = plugin; }
-
     public void load() { config = plugin.getConfig(); loadValues(); }
 
+    // ─── Per-buff config helpers ───
+    private String bkey(int id) { return (id >= 1 && id < BUFF_KEYS.length) ? BUFFS + BUFF_KEYS[id] + "." : BUFFS + id + "-unknown."; }
+    public int buffInt(int id, String key, int def) { return config.getInt(bkey(id) + key, def); }
+    public double buffDouble(int id, String key, double def) { return config.getDouble(bkey(id) + key, def); }
+    public boolean buffBool(int id, String key, boolean def) { return config.getBoolean(bkey(id) + key, def); }
+    public String buffString(int id, String key, String def) { return config.getString(bkey(id) + key, def); }
+    public boolean isBuffEnabled(int id) { return buffBool(id, "enabled", true); }
+
+    // ─── Convenience getters per buff ───
+    public int getPowerMinerAmplifier()       { return buffInt(2, "haste-amplifier", 0); }
+    public double getRoadrunnerSpeed()        { return buffDouble(3, "speed-modifier", 0.12); }
+    public double getDolphinSpeed()           { return buffDouble(17, "speed-modifier", 0.12); }
+    public double getSonicSpeed()             { return buffDouble(31, "speed-modifier", 0.4); }
+    public double getHealthyHearts()          { return buffDouble(29, "extra-hearts", 10.0); }
+    public int getLooterMultiplier()          { return buffInt(8, "drop-multiplier", 2); }
+    public int getTimberMax()                 { return buffInt(14, "max-blocks", 50); }
+    public int getVeinMinerMax()              { return buffInt(15, "max-blocks", 32); }
+    public int getMagnetRange()               { return buffInt(11, "range", 5); }
+    public double getMagnetStrength()         { return buffDouble(11, "pull-strength", 0.5); }
+    public double getVampireHeal()            { return buffDouble(19, "heal-per-kill", 1.0); }
+    public int getXpMultiplier()              { return buffInt(20, "xp-multiplier", 2); }
+    public double getGlassCannonDealt()       { return buffDouble(23, "damage-dealt-multiplier", 2.0); }
+    public double getGlassCannonTaken()       { return buffDouble(23, "damage-taken-multiplier", 2.0); }
+    public int getLibrarianCost()             { return buffInt(25, "enchant-cost", 1); }
+    public double getSpiderClimbVelocity()    { return buffDouble(27, "climb-velocity", 0.3); }
+    public long getEnderPearlWindowMs()       { return buffInt(28, "pearl-fall-window-ms", 1000); }
+    public double getRichNuggetChance()       { return buffDouble(32, "nugget-chance", 0.1); }
+    public double getScavengerChance()        { return buffDouble(33, "drop-chance", 0.05); }
+    public List<Material> getScavengerLoot() {
+        return config.getStringList(bkey(33) + "loot").stream()
+            .map(s -> { try { return Material.valueOf(s); } catch (Exception e) { return null; } })
+            .filter(m -> m != null).collect(Collectors.toList());
+    }
+    public int getGardenerRadius()            { return buffInt(35, "bone-meal-radius", 1); }
+    public double getThorChance()             { return buffDouble(39, "lightning-chance", 0.05); }
+    public int getTeleporterDistance()        { return buffInt(40, "distance", 5); }
+    public long getTeleporterCooldownMs()     { return buffInt(40, "cooldown-ms", 10000); }
+    public double getInertiaThreshold()       { return buffDouble(44, "velocity-threshold", 0.3); }
+    public int getGravityWellRange()          { return buffInt(45, "range", 5); }
+    public double getGravityWellStrength()    { return buffDouble(45, "pull-strength", 0.3); }
+    public int getAlchemistMultiplier()       { return buffInt(46, "duration-multiplier", 3); }
+    public double getBuilderRefundChance()    { return buffDouble(47, "refund-chance", 0.2); }
+    public double getDoubleJumpVelocity()     { return buffDouble(48, "velocity", 0.8); }
+    public double getSlimyBounceMultiplier()  { return buffDouble(38, "bounce-multiplier", 0.05); }
+
+    // ─── Load all values ───
     private void loadValues() {
-        // Nomad system
         nomadSystemEnabled = config.getBoolean("nomad-system.enabled", true);
         migrateDay = DayOfWeek.valueOf(config.getString("nomad-system.migrate-day", "MONDAY").toUpperCase());
         migrateHour = config.getInt("nomad-system.migrate-hour", 0);
@@ -91,7 +150,6 @@ public class ConfigManager {
         migrationCheckMinutes = config.getInt("nomad-system.migration-check-minutes", 5);
         migrationWarningMinutes = config.getInt("nomad-system.migration-warning-minutes", 5);
 
-        // Daily buffs
         dailyBuffsEnabled = config.getBoolean("daily-buffs.enabled", true);
         broadcastOnJoin = config.getBoolean("daily-buffs.broadcast-on-join", true);
         broadcastColor = config.getString("daily-buffs.broadcast-color", "\u00a76");
@@ -116,7 +174,6 @@ public class ConfigManager {
             }
         }
 
-        // Progression lock
         progressionLockEnabled = config.getBoolean("progression-lock.enabled", true);
         endLocked = config.getBoolean("progression-lock.end-locked", true);
         endUnlockDays = config.getInt("progression-lock.end-unlock-days", 30);
@@ -128,13 +185,11 @@ public class ConfigManager {
         blockGamemodeCommand = config.getBoolean("progression-lock.block-gamemode-command", true);
         blockGiveCommand = config.getBoolean("progression-lock.block-give-command", true);
 
-        // Anti-cheat
         antiCheatEnabled = config.getBoolean("anti-cheat.enabled", true);
         blockSeedCommand = config.getBoolean("anti-cheat.block-seed-command", true);
         scrambleStructureSeeds = config.getBoolean("anti-cheat.scramble-structure-seeds", true);
         oreObfuscation = config.getBoolean("anti-cheat.ore-obfuscation", true);
 
-        // Social
         socialEnabled = config.getBoolean("social.enabled", true);
         ConfigurationSection borderSec = config.getConfigurationSection("social.world-border");
         if (borderSec != null) {
@@ -156,50 +211,7 @@ public class ConfigManager {
         noAdminOp = config.getBoolean("social.no-admin-op", true);
     }
 
-    // ─── Generic buff-setting getters ───
-    public int getBuffInt(String key, int def) { return config.getInt(bs + key, def); }
-    public double getBuffDouble(String key, double def) { return config.getDouble(bs + key, def); }
-    public boolean getBuffBool(String key, boolean def) { return config.getBoolean(bs + key, def); }
-    public String getBuffString(String key, String def) { return config.getString(bs + key, def); }
-
-    // ─── Convenience getters for every buff setting ───
-    public int getPowerMinerAmplifier() { return getBuffInt("power-miner-haste-amplifier", 0); }
-    public double getRoadrunnerSpeed() { return getBuffDouble("roadrunner-speed-modifier", 0.12); }
-    public double getDolphinSpeed() { return getBuffDouble("dolphin-speed-modifier", 0.12); }
-    public double getSonicSpeed() { return getBuffDouble("sonic-speed-modifier", 0.4); }
-    public double getHealthyHearts() { return getBuffDouble("healthy-extra-hearts", 10.0); }
-    public int getLooterMultiplier() { return getBuffInt("looter-drop-multiplier", 2); }
-    public int getTimberMax() { return getBuffInt("timber-max-blocks", 50); }
-    public int getVeinMinerMax() { return getBuffInt("vein-miner-max-blocks", 32); }
-    public int getMagnetRange() { return getBuffInt("magnet-range", 5); }
-    public double getMagnetStrength() { return getBuffDouble("magnet-strength", 0.5); }
-    public double getVampireHeal() { return getBuffDouble("vampire-heal-amount", 1.0); }
-    public int getXpMultiplier() { return getBuffInt("xp-junkie-multiplier", 2); }
-    public double getGlassCannonDealt() { return getBuffDouble("glass-cannon-damage-multiplier", 2.0); }
-    public double getGlassCannonTaken() { return getBuffDouble("glass-cannon-damage-taken-multiplier", 2.0); }
-    public int getLibrarianCost() { return getBuffInt("librarian-enchant-cost", 1); }
-    public double getSpiderClimbVelocity() { return getBuffDouble("spider-climb-velocity", 0.3); }
-    public long getEnderPearlWindowMs() { return getBuffInt("ender-pearl-window-ms", 1000); }
-    public double getRichNuggetChance() { return getBuffDouble("rich-nugget-chance", 0.1); }
-    public double getScavengerChance() { return getBuffDouble("scavenger-chance", 0.05); }
-    public List<Material> getScavengerLoot() {
-        return config.getStringList(bs + "scavenger-loot").stream()
-            .map(s -> { try { return Material.valueOf(s); } catch (Exception e) { return null; } })
-            .filter(m -> m != null).collect(Collectors.toList());
-    }
-    public int getGardenerRadius() { return getBuffInt("gardener-radius", 1); }
-    public double getThorChance() { return getBuffDouble("thor-lightning-chance", 0.05); }
-    public int getTeleporterDistance() { return getBuffInt("teleporter-distance", 5); }
-    public long getTeleporterCooldownMs() { return getBuffInt("teleporter-cooldown-ms", 10000); }
-    public double getInertiaThreshold() { return getBuffDouble("inertia-velocity-threshold", 0.3); }
-    public int getGravityWellRange() { return getBuffInt("gravity-well-range", 5); }
-    public double getGravityWellStrength() { return getBuffDouble("gravity-well-strength", 0.3); }
-    public int getAlchemistMultiplier() { return getBuffInt("alchemist-duration-multiplier", 3); }
-    public double getBuilderRefundChance() { return getBuffDouble("builder-refund-chance", 0.2); }
-    public double getDoubleJumpVelocity() { return getBuffDouble("double-jump-velocity", 0.8); }
-    public double getSlimyBounceMultiplier() { return getBuffDouble("slimy-bounce-multiplier", 0.05); }
-
-    // ─── Nomad system getters ───
+    // ─── Getters: Nomad system ───
     public boolean isNomadSystemEnabled() { return nomadSystemEnabled; }
     public DayOfWeek getMigrateDay() { return migrateDay; }
     public int getMigrateHour() { return migrateHour; }
@@ -209,7 +221,7 @@ public class ConfigManager {
     public int getMigrationCheckMinutes() { return migrationCheckMinutes; }
     public int getMigrationWarningMinutes() { return migrationWarningMinutes; }
 
-    // ─── Daily buff getters ───
+    // ─── Getters: Daily buffs ───
     public boolean isDailyBuffsEnabled() { return dailyBuffsEnabled; }
     public boolean isBroadcastOnJoin() { return broadcastOnJoin; }
     public String getBroadcastColor() { return broadcastColor; }
@@ -219,12 +231,8 @@ public class ConfigManager {
         int idx = day.getValue();
         return dayConfigs[idx] != null ? dayConfigs[idx] : new DayConfig(BuffMode.OFF, List.of(), List.of());
     }
-    public List<Integer> getWeekendPool() {
-        DayConfig sat = getDayConfig(DayOfWeek.SATURDAY);
-        return sat.randomPool.isEmpty() ? sat.fixedBuffs : sat.randomPool;
-    }
 
-    // ─── Progression lock getters ───
+    // ─── Getters: Progression lock ───
     public boolean isProgressionLockEnabled() { return progressionLockEnabled; }
     public boolean isEndLocked() { return endLocked; }
     public int getEndUnlockDays() { return endUnlockDays; }
@@ -236,13 +244,13 @@ public class ConfigManager {
     public boolean isBlockGamemodeCommand() { return blockGamemodeCommand; }
     public boolean isBlockGiveCommand() { return blockGiveCommand; }
 
-    // ─── Anti-cheat getters ───
+    // ─── Getters: Anti-cheat ───
     public boolean isAntiCheatEnabled() { return antiCheatEnabled; }
     public boolean isBlockSeedCommand() { return blockSeedCommand; }
     public boolean isScrambleStructureSeeds() { return scrambleStructureSeeds; }
     public boolean isOreObfuscation() { return oreObfuscation; }
 
-    // ─── Social getters ───
+    // ─── Getters: Social ───
     public boolean isSocialEnabled() { return socialEnabled; }
     public boolean isWorldBorderEnabled() { return worldBorderEnabled; }
     public int getWorldBorderSize() { return worldBorderSize; }
