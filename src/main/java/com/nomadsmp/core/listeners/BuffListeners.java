@@ -49,7 +49,7 @@ public class BuffListeners implements Listener {
 
     private ConfigManager cfg() { return plugin.getConfigManager(); }
 
-    // 1: Titanium — no durability loss
+    // 1: Titanium
     @EventHandler
     public void onItemDamage(PlayerItemDamageEvent event) {
         if (active(1)) event.setCancelled(true);
@@ -119,9 +119,11 @@ public class BuffListeners implements Listener {
         Block block = event.getBlock();
         if (active(14) && Tag.LOGS.isTagged(block.getType())) {
             bfsBreak(block, block.getType(), cfg().getTimberMax(), event.getPlayer());
+            plugin.getStatsManager().recordTimberUse();
         }
         if (active(15) && block.getType().name().endsWith("_ORE")) {
             bfsBreak(block, block.getType(), cfg().getVeinMinerMax(), event.getPlayer());
+            plugin.getStatsManager().recordVeinMinerUse();
         }
     }
 
@@ -200,9 +202,9 @@ public class BuffListeners implements Listener {
         }
 
         if (active(36) && cfg().buffBool(36, "fire-immune", true)
-                && (event.getCause() == EntityDamageEvent.DamageCause.FIRE
-                || event.getCause() == EntityDamageEvent.DamageCause.FIRE_TICK
-                || event.getCause() == EntityDamageEvent.DamageCause.LAVA)) {
+            && (event.getCause() == EntityDamageEvent.DamageCause.FIRE
+            || event.getCause() == EntityDamageEvent.DamageCause.FIRE_TICK
+            || event.getCause() == EntityDamageEvent.DamageCause.LAVA)) {
             event.setCancelled(true);
         }
 
@@ -261,16 +263,26 @@ public class BuffListeners implements Listener {
         }
     }
 
-    // 40: Teleporter
+    // 40: Teleporter — with cooldown message
     @EventHandler
     public void onSneak(PlayerToggleSneakEvent event) {
         if (!active(40) || !event.isSneaking()) return;
         Player player = event.getPlayer();
+        long now = System.currentTimeMillis();
         Long lastUse = teleporterCooldowns.get(player.getUniqueId());
-        if (lastUse != null && System.currentTimeMillis() - lastUse < cfg().getTeleporterCooldownMs()) return;
+        long cooldownMs = cfg().getTeleporterCooldownMs();
+
+        if (lastUse != null && now - lastUse < cooldownMs) {
+            long remainingMs = cooldownMs - (now - lastUse);
+            double remainingSec = remainingMs / 1000.0;
+            player.sendMessage("\u00a78[\u00a76NomadSMP\u00a78] \u00a7eTeleporter on cooldown: "
+                + String.format("%.1f", remainingSec) + "s remaining.");
+            return;
+        }
+
         Location target = player.getLocation().add(player.getLocation().getDirection().normalize().multiply(cfg().getTeleporterDistance()));
         player.teleport(target);
-        teleporterCooldowns.put(player.getUniqueId(), System.currentTimeMillis());
+        teleporterCooldowns.put(player.getUniqueId(), now);
     }
 
     // 46: Alchemist
@@ -326,6 +338,7 @@ public class BuffListeners implements Listener {
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
+        plugin.getStatsManager().recordJoin();
         plugin.getDailyBuffModule().applyToPlayer(event.getPlayer());
         if (plugin.getConfigManager().isBroadcastOnJoin()) {
             var buffIds = plugin.getDailyBuffModule().getCurrentBuffIds();
@@ -349,7 +362,6 @@ public class BuffListeners implements Listener {
         inertiaPlayers.remove(uuid);
     }
 
-    // Inertia tick (44): cancel knockback velocity for recently-hit players
     private void inertiaTick() {
         if (!active(44)) { inertiaPlayers.clear(); return; }
         double threshold = cfg().getInertiaThreshold();
@@ -367,7 +379,6 @@ public class BuffListeners implements Listener {
         }
     }
 
-    // Magnet tick (11): pull nearby items toward players
     private void magnetTick() {
         if (!active(11)) return;
         int range = cfg().getMagnetRange();
@@ -383,7 +394,6 @@ public class BuffListeners implements Listener {
         }
     }
 
-    // Gravity Well tick (45): pull targeting mobs toward players
     private void gravityWellTick() {
         if (!active(45)) return;
         int range = cfg().getGravityWellRange();

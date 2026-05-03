@@ -4,6 +4,8 @@ import com.nomadsmp.core.NomadCore;
 import com.nomadsmp.core.config.ConfigManager;
 import com.nomadsmp.core.modules.DailyBuffModule;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.WorldBorder;
 import org.bukkit.command.Command;
@@ -11,6 +13,9 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -36,13 +41,22 @@ public class NomadCommand implements CommandExecutor, TabCompleter {
         switch (args[0].toLowerCase()) {
             case "reload" -> {
                 plugin.reload();
-                sender.sendMessage("\u00a78[\u00a76NomadSMP\u00a78] \u00a7aConfig reloaded.");
+                String msg = "\u00a78[\u00a76NomadSMP\u00a78] \u00a7aConfig reloaded.";
+                sender.sendMessage(msg);
+                // Notify all ops (not the sender again)
+                if (sender instanceof Player p) {
+                    plugin.notifyOps(msg); // includes self but that's fine for reload
+                }
             }
             case "status" -> showStatus(sender);
+            case "stats" -> showStats(sender);
             case "migratenow" -> {
                 if (!(sender instanceof Player) || sender.hasPermission("nomad.admin")) {
                     plugin.getNomadModule().runMigration();
-                    sender.sendMessage("\u00a78[\u00a76NomadSMP\u00a78] \u00a7eMigration triggered!");
+                    plugin.getStatsManager().recordMigration();
+                    String msg = "\u00a78[\u00a76NomadSMP\u00a78] \u00a7eMigration triggered!";
+                    sender.sendMessage(msg);
+                    plugin.notifyOps(msg);
                 }
             }
             case "setbuff" -> {
@@ -65,62 +79,48 @@ public class NomadCommand implements CommandExecutor, TabCompleter {
                         return true;
                     }
                 }
+                // setCurrentBuffIds broadcasts to ALL players (buff change)
                 plugin.getDailyBuffModule().setCurrentBuffIds(ids);
-                reapplyBuffs();
-                sender.sendMessage("\u00a78[\u00a76NomadSMP\u00a78] \u00a7aBuff set to: " + buffNames(ids));
+                // Self-only confirm to the operator
+                if (sender instanceof Player p) {
+                    plugin.notifySelf(p, "\u00a78[\u00a76NomadSMP\u00a78] \u00a77You set the buff. All players have been notified.");
+                }
             }
             case "setbuffpool" -> {
                 if (!checkAdmin(sender)) return true;
                 if (args.length < 4) {
                     sender.sendMessage("\u00a7cUsage: /nomad setbuffpool <day> <mode> <id1,id2,...>");
                     sender.sendMessage("\u00a77Modes: fixed, random, off");
-                    sender.sendMessage("\u00a77Days: monday, tuesday, wednesday, thursday, friday, saturday, sunday");
+                    sender.sendMessage("\u00a77Days: monday-sunday");
                     return true;
                 }
                 String dayStr = args[1].toLowerCase();
                 String modeStr = args[2].toLowerCase();
                 String poolStr = args[3];
 
-                // Validate day
                 DayOfWeek day;
-                try {
-                    day = DayOfWeek.valueOf(dayStr.toUpperCase());
-                } catch (IllegalArgumentException e) {
-                    sender.sendMessage("\u00a7cInvalid day: " + dayStr);
-                    return true;
-                }
+                try { day = DayOfWeek.valueOf(dayStr.toUpperCase()); }
+                catch (IllegalArgumentException e) { sender.sendMessage("\u00a7cInvalid day: " + dayStr); return true; }
 
-                // Validate mode
                 ConfigManager.BuffMode mode = switch (modeStr) {
                     case "fixed" -> ConfigManager.BuffMode.FIXED;
                     case "random" -> ConfigManager.BuffMode.RANDOM;
                     case "off" -> ConfigManager.BuffMode.OFF;
-                    default -> {
-                        sender.sendMessage("\u00a7cInvalid mode: " + modeStr + ". Use fixed, random, or off.");
-                        yield null;
-                    }
+                    default -> { sender.sendMessage("\u00a7cInvalid mode. Use fixed, random, or off."); yield null; }
                 };
                 if (mode == null) return true;
 
-                // Parse pool/buffs
                 List<Integer> ids = new ArrayList<>();
                 if (!poolStr.equalsIgnoreCase("none") && !poolStr.equalsIgnoreCase("empty")) {
                     for (String part : poolStr.split(",")) {
                         try {
                             int id = Integer.parseInt(part.trim());
-                            if (id < 1 || id > 50) {
-                                sender.sendMessage("\u00a7cBuff ID must be 1-50. Got: " + id);
-                                return true;
-                            }
+                            if (id < 1 || id > 50) { sender.sendMessage("\u00a7cBuff ID must be 1-50. Got: " + id); return true; }
                             ids.add(id);
-                        } catch (NumberFormatException e) {
-                            sender.sendMessage("\u00a7cInvalid buff ID: " + part);
-                            return true;
-                        }
+                        } catch (NumberFormatException e) { sender.sendMessage("\u00a7cInvalid buff ID: " + part); return true; }
                     }
                 }
 
-                // Write to config
                 String configPath = "daily-buffs." + dayStr;
                 plugin.getConfig().set(configPath + ".mode", modeStr);
                 if (mode == ConfigManager.BuffMode.FIXED) {
@@ -136,8 +136,10 @@ public class NomadCommand implements CommandExecutor, TabCompleter {
                 plugin.saveConfig();
                 plugin.reload();
 
-                sender.sendMessage("\u00a78[\u00a76NomadSMP\u00a78] \u00a7a" + dayStr + " set to " + modeStr
-                    + (ids.isEmpty() ? "" : " with [" + ids + "]") + ". Config saved and reloaded.");
+                // Ops-only notification (schedule config, not active buff)
+                String msg = "\u00a78[\u00a76NomadSMP\u00a78] \u00a7a" + dayStr + " set to " + modeStr
+                    + (ids.isEmpty() ? "" : " with [" + ids + "]") + ". Config saved.";
+                plugin.notifyOps(msg);
             }
             case "setborder" -> {
                 if (!checkAdmin(sender)) return true;
@@ -150,25 +152,34 @@ public class NomadCommand implements CommandExecutor, TabCompleter {
                     int cx = args.length >= 3 ? Integer.parseInt(args[2]) : plugin.getConfigManager().getWorldBorderCenterX();
                     int cz = args.length >= 4 ? Integer.parseInt(args[3]) : plugin.getConfigManager().getWorldBorderCenterZ();
 
-                    // Update config
                     plugin.getConfig().set("social.world-border.size", size);
                     plugin.getConfig().set("social.world-border.center-x", cx);
                     plugin.getConfig().set("social.world-border.center-z", cz);
                     plugin.saveConfig();
 
-                    // Apply immediately
                     World world = Bukkit.getWorlds().getFirst();
                     WorldBorder border = world.getWorldBorder();
                     border.setCenter(cx, cz);
                     border.setSize(size);
 
-                    sender.sendMessage("\u00a78[\u00a76NomadSMP\u00a78] \u00a7aWorld border set to " + size + "x" + size
-                        + " centered at " + cx + ", " + cz);
+                    // Self-only for the operator who changed it
+                    String msg = "\u00a78[\u00a76NomadSMP\u00a78] \u00a7aWorld border set to " + size + "x" + size
+                        + " centered at " + cx + ", " + cz;
+                    if (sender instanceof Player p) plugin.notifySelf(p, msg);
+                    else sender.sendMessage(msg);
+                    // Also notify other ops
+                    plugin.notifyOps(msg);
                 } catch (NumberFormatException e) {
                     sender.sendMessage("\u00a7cInvalid number format.");
                 }
             }
-            case "buffs" -> listBuffs(sender);
+            case "buffs" -> {
+                if (sender instanceof Player player) {
+                    openBuffsGUI(player);
+                } else {
+                    listBuffsChat(sender);
+                }
+            }
             case "sethome" -> {
                 if (sender instanceof Player player) {
                     plugin.getHomeStorage().setHome(player.getUniqueId(), player.getLocation());
@@ -182,32 +193,60 @@ public class NomadCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    private boolean checkAdmin(CommandSender sender) {
-        if (!sender.hasPermission("nomad.admin")) {
-            sender.sendMessage("\u00a7cYou don't have permission to use this command.");
-            return false;
-        }
-        return true;
-    }
+    // ─── GUI Menu for /nomad buffs ───
 
-    private void reapplyBuffs() {
-        for (Player p : plugin.getServer().getOnlinePlayers()) {
-            plugin.getDailyBuffModule().removeAllBuffEffects(p);
-            plugin.getDailyBuffModule().applyToPlayer(p);
-        }
-    }
-
-    private String buffNames(List<Integer> ids) {
-        StringBuilder sb = new StringBuilder();
+    private void openBuffsGUI(Player player) {
         DailyBuffModule bm = plugin.getDailyBuffModule();
-        for (int id : ids) {
-            if (!sb.isEmpty()) sb.append(", ");
-            sb.append("\u00a7a").append(bm.getBuffName(id)).append("\u00a77 (").append(id).append(")");
+        Inventory gui = Bukkit.createInventory(null, 54, "\u00a76\u00a7lNomadSMP Buffs");
+
+        for (int i = 1; i <= 50; i++) {
+            boolean isActive = bm.isBuffActive(i);
+            boolean isEnabled = plugin.getConfigManager().isBuffEnabled(i);
+
+            Material mat = isActive ? Material.LIME_STAINED_GLASS_PANE : Material.GRAY_STAINED_GLASS_PANE;
+            if (!isEnabled) mat = Material.RED_STAINED_GLASS_PANE;
+
+            ItemStack item = new ItemStack(mat);
+            ItemMeta meta = item.getItemMeta();
+            if (meta != null) {
+                String prefix = isActive ? "\u00a7a\u2714 " : (!isEnabled ? "\u00a7c\u2718 " : "\u00a77 ");
+                meta.setDisplayName(prefix + "\u00a7f" + bm.getBuffName(i));
+                List<String> lore = new ArrayList<>();
+                lore.add("\u00a77ID: " + i);
+                lore.add("\u00a77" + bm.getBuffDescription(i));
+                if (isActive) lore.add("\u00a7a\u25cf Currently Active");
+                else if (!isEnabled) lore.add("\u00a7cDisabled in config");
+                else lore.add("\u00a77Inactive today");
+                meta.setLore(lore);
+                item.setItemMeta(meta);
+            }
+            gui.setItem(i - 1, item);
         }
-        return sb.toString();
+
+        // Info item in slot 51-53
+        ItemStack info = new ItemStack(Material.BOOK);
+        ItemMeta infoMeta = info.getItemMeta();
+        if (infoMeta != null) {
+            infoMeta.setDisplayName("\u00a76\u00a7lBuff Info");
+            List<String> lore = new ArrayList<>();
+            var appliedAt = bm.getAppliedAt();
+            if (appliedAt != null) {
+                lore.add("\u00a77Applied at: " + appliedAt.toLocalTime().toString().substring(0, 5));
+            }
+            int dur = plugin.getConfigManager().getDurationHours();
+            lore.add("\u00a77Duration: " + (dur == 0 ? "All day" : dur + "h"));
+            lore.add("\u00a77Stacking: " + plugin.getConfigManager().getStacking().name().toLowerCase());
+            infoMeta.setLore(lore);
+            info.setItemMeta(infoMeta);
+        }
+        gui.setItem(51, info);
+
+        player.openInventory(gui);
     }
 
-    private void listBuffs(CommandSender sender) {
+    // ─── Chat-based buff list (for console) ───
+
+    private void listBuffsChat(CommandSender sender) {
         DailyBuffModule bm = plugin.getDailyBuffModule();
         sender.sendMessage("\u00a78\u00a7m ");
         sender.sendMessage("\u00a76\u00a7l Buff Reference (1-50)");
@@ -221,9 +260,32 @@ public class NomadCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage("\u00a78\u00a7m ");
     }
 
+    // ─── Stats ───
+
+    private void showStats(CommandSender sender) {
+        var stats = plugin.getStatsManager();
+        long uptimeSec = stats.getUptimeSeconds();
+        long hours = uptimeSec / 3600;
+        long mins = (uptimeSec % 3600) / 60;
+        long secs = uptimeSec % 60;
+
+        sender.sendMessage("\u00a78\u00a7m ");
+        sender.sendMessage("\u00a76\u00a7l NomadSMP-Core Stats");
+        sender.sendMessage("\u00a78\u00a7m ");
+        sender.sendMessage("\u00a7eUptime: \u00a7a" + hours + "h " + mins + "m " + secs + "s");
+        sender.sendMessage("\u00a7eTotal Player Joins: \u00a7a" + stats.getTotalJoins());
+        sender.sendMessage("\u00a7eBuff Activations: \u00a7a" + stats.getBuffActivations());
+        sender.sendMessage("\u00a7eMigrations Run: \u00a7a" + stats.getMigrationCount());
+        sender.sendMessage("\u00a7eTimber Uses: \u00a7a" + stats.getTimberUses());
+        sender.sendMessage("\u00a7eVein Miner Uses: \u00a7a" + stats.getVeinMinerUses());
+        sender.sendMessage("\u00a78\u00a7m ");
+    }
+
+    // ─── Status ───
+
     private void showStatus(CommandSender sender) {
-        DailyBuffModule buffModule = plugin.getDailyBuffModule();
-        List<Integer> buffIds = buffModule.getCurrentBuffIds();
+        DailyBuffModule bm = plugin.getDailyBuffModule();
+        List<Integer> buffIds = bm.getCurrentBuffIds();
         var config = plugin.getConfigManager();
 
         sender.sendMessage("\u00a78\u00a7m ");
@@ -233,7 +295,8 @@ public class NomadCommand implements CommandExecutor, TabCompleter {
         // Module toggles
         sender.sendMessage("\u00a7eModules:");
         sender.sendMessage("  " + onOff(config.isNomadSystemEnabled()) + " \u00a7bNomad System");
-        sender.sendMessage("  " + onOff(config.isDailyBuffsEnabled()) + " \u00a7bDaily Buffs");
+        sender.sendMessage("  " + onOff(config.isDailyBuffsEnabled()) + " \u00a7bDaily Buffs"
+            + " \u00a77(" + config.getStacking().name().toLowerCase() + ", " + (config.getDurationHours() == 0 ? "all day" : config.getDurationHours() + "h") + ")");
         sender.sendMessage("  " + onOff(config.isProgressionLockEnabled()) + " \u00a7bProgression Lock");
         sender.sendMessage("  " + onOff(config.isAntiCheatEnabled()) + " \u00a7bAnti-Cheat");
         sender.sendMessage("  " + onOff(config.isSocialEnabled()) + " \u00a7bSocial");
@@ -244,8 +307,8 @@ public class NomadCommand implements CommandExecutor, TabCompleter {
         } else {
             for (int id : buffIds) {
                 String enabled = config.isBuffEnabled(id) ? "\u00a7a" : "\u00a7c(disabled) ";
-                sender.sendMessage("\u00a7eActive Buff: " + enabled + buffModule.getBuffName(id)
-                    + " \u00a77(" + id + ") \u2014 " + buffModule.getBuffDescription(id));
+                sender.sendMessage("\u00a7eActive Buff: " + enabled + bm.getBuffName(id)
+                    + " \u00a77(" + id + ") \u2014 " + bm.getBuffDescription(id));
             }
         }
 
@@ -295,6 +358,31 @@ public class NomadCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage("\u00a78\u00a7m ");
     }
 
+    private boolean checkAdmin(CommandSender sender) {
+        if (!sender.hasPermission("nomad.admin")) {
+            sender.sendMessage("\u00a7cYou don't have permission to use this command.");
+            return false;
+        }
+        return true;
+    }
+
+    private void reapplyBuffs() {
+        for (Player p : plugin.getServer().getOnlinePlayers()) {
+            plugin.getDailyBuffModule().removeAllBuffEffects(p);
+            plugin.getDailyBuffModule().applyToPlayer(p);
+        }
+    }
+
+    private String buffNames(List<Integer> ids) {
+        StringBuilder sb = new StringBuilder();
+        DailyBuffModule bm = plugin.getDailyBuffModule();
+        for (int id : ids) {
+            if (!sb.isEmpty()) sb.append(", ");
+            sb.append("\u00a7a").append(bm.getBuffName(id)).append("\u00a77 (").append(id).append(")");
+        }
+        return sb.toString();
+    }
+
     private String onOff(boolean value) {
         return value ? "\u00a7a\u2714" : "\u00a7c\u2718";
     }
@@ -305,7 +393,8 @@ public class NomadCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage("\u00a78\u00a7m ");
         sender.sendMessage("\u00a7e/nomad reload \u00a77\u2014 Reload config");
         sender.sendMessage("\u00a7e/nomad status \u00a77\u2014 Show all settings");
-        sender.sendMessage("\u00a7e/nomad buffs \u00a77\u2014 List all 50 buffs");
+        sender.sendMessage("\u00a7e/nomad stats \u00a77\u2014 Show server stats");
+        sender.sendMessage("\u00a7e/nomad buffs \u00a77\u2014 Open buff menu (GUI for players)");
         sender.sendMessage("\u00a7e/nomad setbuff <id...> \u00a77\u2014 Override today's buff");
         sender.sendMessage("\u00a7e/nomad setbuffpool <day> <mode> <ids> \u00a77\u2014 Set day schedule");
         sender.sendMessage("\u00a7e/nomad setborder <size> [cx] [cz] \u00a77\u2014 Set world border");
@@ -317,7 +406,7 @@ public class NomadCommand implements CommandExecutor, TabCompleter {
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
         if (args.length == 1) {
-            return List.of("reload", "status", "buffs", "setbuff", "setbuffpool", "setborder", "migratenow", "sethome");
+            return List.of("reload", "status", "stats", "buffs", "setbuff", "setbuffpool", "setborder", "migratenow", "sethome");
         }
         if (args.length == 2) {
             return switch (args[0].toLowerCase()) {
