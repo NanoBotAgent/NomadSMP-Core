@@ -24,10 +24,11 @@ Every module can be toggled independently in `config.yml`. All gameplay values a
 ## 📦 Requirements
 
 - **PaperMC** 26.1+ (Java 25)
-- **FastAsyncWorldEdit (FAWE)** 2.15.1+ for MC 26.1 (required for Nomad house migration)
+- **FastAsyncWorldEdit (FAWE)** 2.15.1+ or **WorldEdit** 7.4.3 (required for Nomad house migration)
 
-> **Download:** [FAWE Paper 2.15.1-SNAPSHOT for MC 26.1](https://github.com/roggy666/FastAsyncWorldEdit-26.1/releases/download/26.1/FastAsyncWorldEdit-Paper-2.15.1-SNAPSHOT.jar) — unofficial 26.1 build by [roggy666](https://github.com/roggy666/FastAsyncWorldEdit-26.1).  
-> Upstream WorldEdit 7.4+ also works if you don't need FAWE's async performance.
+> **Downloads:**
+> - [FAWE Paper 2.15.1-SNAPSHOT for MC 26.1](https://github.com/roggy666/FastAsyncWorldEdit-26.1/releases/download/26.1/FastAsyncWorldEdit-Paper-2.15.1-SNAPSHOT.jar) — unofficial 26.1 build by [roggy666](https://github.com/roggy666/FastAsyncWorldEdit-26.1) (recommended for async performance)
+> - [WorldEdit 7.4.3 (Bukkit/Paper)](https://cdn.modrinth.com/data/1u6JkXh5/versions/yDUBafTJ/worldedit-bukkit-7.4.3.jar) — upstream stable release
 
 ---
 
@@ -147,7 +148,7 @@ Forces weekly house migration to keep the map fresh and prevent mega-base stagna
 - **House radius**: Detects player structures within N blocks of their home
 - **Safe land check**: Ensures new location has minimum Y and solid ground
 - **Warning**: Players are warned N minutes before migration
-- FAWE pastes the house at the new random location
+- FAWE/WorldEdit pastes the house at the new random location
 
 Config:
 ```yaml
