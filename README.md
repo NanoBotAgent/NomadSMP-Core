@@ -11,7 +11,7 @@ Built for **Paper 26.1+** (Java 25). Designed for small whitelisted communities 
 
 | Module | What It Does |
 |---|---|
-| 🏠 **Nomad System** | Weekly house migration via WorldEdit — no one stays in one base forever |
+| 🏠 **Nomad System** | Weekly house migration via FAWE — no one stays in one base forever |
 | 🧪 **Daily Buffs** | 50 unique effects on a per-day schedule (fixed, random, or off) |
 | 🔒 **Progression Lock** | End lockdown, Netherite ban, command blocking — timed unlocks |
 | 🛡️ **Anti-Cheat** | Seed protection, ore obfuscation, structure seed scrambling |
@@ -24,9 +24,10 @@ Every module can be toggled independently in `config.yml`. All gameplay values a
 ## 📦 Requirements
 
 - **PaperMC** 26.1+ (Java 25)
-- **WorldEdit** 7.4+ (required for Nomad house migration)
+- **FastAsyncWorldEdit (FAWE)** 2.15.1+ for MC 26.1 (required for Nomad house migration)
 
-> **Note:** FAWE 2.x does **not** support MC 26.1 — use upstream WorldEdit instead.
+> **Download:** [FAWE Paper 2.15.1-SNAPSHOT for MC 26.1](https://github.com/roggy666/FastAsyncWorldEdit-26.1/releases/download/26.1/FastAsyncWorldEdit-Paper-2.15.1-SNAPSHOT.jar) — unofficial 26.1 build by [roggy666](https://github.com/roggy666/FastAsyncWorldEdit-26.1).  
+> Upstream WorldEdit 7.4+ also works if you don't need FAWE's async performance.
 
 ---
 
@@ -146,7 +147,7 @@ Forces weekly house migration to keep the map fresh and prevent mega-base stagna
 - **House radius**: Detects player structures within N blocks of their home
 - **Safe land check**: Ensures new location has minimum Y and solid ground
 - **Warning**: Players are warned N minutes before migration
-- WorldEdit pastes the house at the new random location
+- FAWE pastes the house at the new random location
 
 Config:
 ```yaml
