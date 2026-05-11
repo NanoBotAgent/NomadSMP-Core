@@ -46,7 +46,7 @@ public class DailyBuffModule {
         "+5 extra hearts", "Regen II", "Speed III", "Gold nugget drops",
         "Bonus grass loot", "Glowing effect", "3x3 bone meal",
         "Leave snow trail + fire immune", "Peaceful mob attraction",
-        "Bouncy fall + launch", "5% lightning on hit", "5-block sneak teleport",
+        "Bouncy fall + launch", "5% lightning on hit", "Raytrace sneak teleport (safe landing)",
         "Slow Falling", "Wither/Slow/Blind immune", "Strength I",
         "Knockback immune", "Pull mobs toward you", "3x potion duration",
         "20% block refund", "Double jump in survival", "Infinite oxygen",
