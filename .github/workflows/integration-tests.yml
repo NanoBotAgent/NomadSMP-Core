@@ -131,10 +131,8 @@ jobs:
           echo "enable-rcon=true" >> server.properties
           echo "rcon.port=25575" >> server.properties
           echo "rcon.password=testpass" >> server.properties
-      - name: Install mcrcon
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq mcrcon
+      - name: Install Python RCON client
+        run: pip install mcrcon
       - name: Start Paper server
         timeout-minutes: 5
         run: |
@@ -252,10 +250,8 @@ jobs:
           echo "enable-rcon=true" >> server.properties
           echo "rcon.port=25575" >> server.properties
           echo "rcon.password=testpass" >> server.properties
-      - name: Install mcrcon
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq mcrcon
+      - name: Install Python RCON client
+        run: pip install mcrcon
       - name: Test buff switching clears old effects
         timeout-minutes: 5
         run: |
@@ -340,10 +336,8 @@ jobs:
           echo "enable-rcon=true" >> server.properties
           echo "rcon.port=25575" >> server.properties
           echo "rcon.password=testpass" >> server.properties
-      - name: Install mcrcon
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq mcrcon
+      - name: Install Python RCON client
+        run: pip install mcrcon
       - name: Test all 51 buffs can be set
         timeout-minutes: 8
         run: |
@@ -429,10 +423,8 @@ jobs:
           echo "enable-rcon=true" >> server.properties
           echo "rcon.port=25575" >> server.properties
           echo "rcon.password=testpass" >> server.properties
-      - name: Install mcrcon
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq mcrcon
+      - name: Install Python RCON client
+        run: pip install mcrcon
       - name: Full plugin exercise + exception scan
         timeout-minutes: 5
         run: |
