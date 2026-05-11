@@ -177,7 +177,7 @@ public class BuffListeners implements Listener {
         Set<Block> visited = new HashSet<>();
         // Priority: UP first (trunk), then sideways, then down
         BlockFace[] priorityFaces = {
-            BlockFace.UP, BlockFace.UP_2,
+            BlockFace.UP,
             BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST,
             BlockFace.DOWN
         };
