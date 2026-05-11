@@ -568,6 +568,9 @@ public class BuffListeners implements Listener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         plugin.getStatsManager().recordJoin();
+        // Always strip old buff effects first to prevent leftover buffs
+        // from previous days stacking on top of current day's buffs
+        plugin.getDailyBuffModule().removeAllBuffEffects(event.getPlayer());
         plugin.getDailyBuffModule().applyToPlayer(event.getPlayer());
         if (plugin.getConfigManager().isBroadcastOnJoin()) {
             var buffIds = plugin.getDailyBuffModule().getCurrentBuffIds();
