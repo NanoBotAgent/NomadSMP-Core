@@ -58,7 +58,13 @@ public class BuffListeners implements Listener {
     // Track player-placed blocks
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockPlace(BlockPlaceEvent event) {
+        // Track player-placed blocks for Timber/Leaf Cut exclusion
         playerPlacedBlocks.add(event.getBlock().getLocation());
+        // 47: Builder refund
+        if (active(47) && Math.random() < cfg().getBuilderRefundChance()) {
+            ItemStack hand = event.getItemInHand();
+            hand.setAmount(hand.getAmount() + 1);
+        }
     }
 
     /** Check if a block was placed by a player (not naturally generated). */
@@ -530,14 +536,7 @@ public class BuffListeners implements Listener {
         }, 1L);
     }
 
-    // 47: Builder
-    @EventHandler
-    public void onBlockPlace(org.bukkit.event.block.BlockPlaceEvent event) {
-        if (active(47) && Math.random() < cfg().getBuilderRefundChance()) {
-            ItemStack hand = event.getItemInHand();
-            hand.setAmount(hand.getAmount() + 1);
-        }
-    }
+    // 47: Builder (merged into onBlockPlace above)
 
     // 48: Double Jump
     @EventHandler
