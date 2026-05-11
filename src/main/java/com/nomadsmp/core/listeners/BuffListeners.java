@@ -13,14 +13,18 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockDropItemEvent;
 import org.bukkit.event.block.BlockGrowEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.enchantment.EnchantItemEvent;
 import org.bukkit.event.entity.*;
 import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.Damageable;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.Material;
 import org.bukkit.Tag;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
 import java.util.*;
@@ -32,6 +36,8 @@ public class BuffListeners implements Listener {
     private final Set<UUID> hasDoubleJumped = new HashSet<>();
     private final Map<UUID, Long> pearlTimeMap = new HashMap<>();
     private final Set<UUID> inertiaPlayers = new HashSet<>();
+    // Tracks blocks placed by players to exclude from Timber/LeafCut
+    private final Set<Location> playerPlacedBlocks = Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<>());
     private int magnetTaskId = -1;
     private int gravityWellTaskId = -1;
     private int inertiaTaskId = -1;
@@ -48,6 +54,17 @@ public class BuffListeners implements Listener {
     }
 
     private ConfigManager cfg() { return plugin.getConfigManager(); }
+
+    // Track player-placed blocks
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onBlockPlace(BlockPlaceEvent event) {
+        playerPlacedBlocks.add(event.getBlock().getLocation());
+    }
+
+    /** Check if a block was placed by a player (not naturally generated). */
+    private boolean isPlayerPlaced(Block block) {
+        return playerPlacedBlocks.contains(block.getLocation());
+    }
 
     // 1: Titanium
     @EventHandler
@@ -113,20 +130,183 @@ public class BuffListeners implements Listener {
         }
     }
 
-    // 14: Timber, 15: Vein Miner
+    // 14: Timber (rewritten), 15: Vein Miner, 51: Leaf Cut
     @EventHandler(priority = EventPriority.HIGH)
     public void onBlockBreak(BlockBreakEvent event) {
         Block block = event.getBlock();
+        Player player = event.getPlayer();
+        ItemStack tool = player.getInventory().getItemInMainHand();
+
+        // 14: Timber — only breaks naturally-generated logs in the same tree
         if (active(14) && Tag.LOGS.isTagged(block.getType())) {
-            bfsBreak(block, block.getType(), cfg().getTimberMax(), event.getPlayer());
-            plugin.getStatsManager().recordTimberUse();
+            if (!isPlayerPlaced(block)) {
+                timberBreak(block, cfg().getTimberMax(), player, tool);
+                plugin.getStatsManager().recordTimberUse();
+            }
         }
+
+        // 15: Vein Miner
         if (active(15) && block.getType().name().endsWith("_ORE")) {
-            bfsBreak(block, block.getType(), cfg().getVeinMinerMax(), event.getPlayer());
+            bfsBreak(block, block.getType(), cfg().getVeinMinerMax(), player);
             plugin.getStatsManager().recordVeinMinerUse();
+        }
+
+        // 51: Leaf Cut — when breaking a log, check if the tree above is fully cut
+        // (no more logs remaining above this block) and remove natural leaves
+        if (active(51) && Tag.LOGS.isTagged(block.getType()) && !isPlayerPlaced(block)) {
+            // Delay 1 tick so the broken log is gone when we scan
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                removeOrphanedLeaves(block);
+            }, 1L);
         }
     }
 
+    /**
+     * Timber: BFS that prioritizes the tree being cut.
+     * - Starts from the broken block, searches UP first (tree trunk), then sideways
+     * - Skips player-placed logs
+     * - Applies durability damage to the tool per log broken
+     */
+    private void timberBreak(Block start, int maxBlocks, Player player, ItemStack tool) {
+        Set<Block> visited = new HashSet<>();
+        // Priority: UP first (trunk), then sideways, then down
+        BlockFace[] priorityFaces = {
+            BlockFace.UP, BlockFace.UP_2,
+            BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST,
+            BlockFace.DOWN
+        };
+
+        Queue<Block> queue = new LinkedList<>();
+        queue.add(start);
+        visited.add(start);
+
+        while (!queue.isEmpty() && visited.size() < maxBlocks) {
+            Block current = queue.poll();
+            for (BlockFace face : priorityFaces) {
+                Block neighbor = current.getRelative(face);
+                if (!visited.contains(neighbor)
+                        && Tag.LOGS.isTagged(neighbor.getType())
+                        && !isPlayerPlaced(neighbor)) {
+                    visited.add(neighbor);
+                    queue.add(neighbor);
+                }
+            }
+        }
+
+        // Break all connected logs (skip the start block — already broken by the event)
+        for (Block b : visited) {
+            if (!b.equals(start)) {
+                b.breakNaturally(tool);
+                applyDurabilityDamage(tool, 1);
+            }
+        }
+
+        // After timber, check for leaf cut opportunity (if both buffs are active)
+        if (active(51)) {
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                removeOrphanedLeaves(start);
+            }, 2L);
+        }
+    }
+
+    /**
+     * Apply durability damage to a tool. Respects Unbreaking enchantment.
+     * Does nothing if the tool is not damageable (e.g. hand, non-tool item).
+     */
+    private void applyDurabilityDamage(ItemStack tool, int damage) {
+        if (tool == null || tool.getType() == Material.AIR) return;
+        ItemMeta meta = tool.getItemMeta();
+        if (!(meta instanceof Damageable damageable)) return;
+
+        // Unbreaking enchantment: chance to cancel damage
+        int unbreaking = tool.getEnchantmentLevel(org.bukkit.enchantments.Enchantment.UNBREAKING);
+        for (int i = 0; i < damage; i++) {
+            if (unbreaking > 0 && Math.random() < (1.0 / (unbreaking + 1.0))) {
+                continue; // Unbreaking cancelled this damage tick
+            }
+            damageable.setDamage(damageable.getDamage() + 1);
+        }
+        tool.setItemMeta(meta);
+
+        // Break the tool if max damage reached
+        if (damageable.getDamage() >= tool.getType().getMaxDurability()) {
+            tool.setAmount(0);
+            playerBreakEffect(tool);
+        }
+    }
+
+    /** Play break sound/particles when a tool breaks from durability. */
+    private void playerBreakEffect(ItemStack tool) {
+        // Bukkit handles the break animation client-side when amount reaches 0
+    }
+
+    /**
+     * Leaf Cut (51): Remove natural leaves from trees that have been fully cut.
+     * Scans upward from the origin block. If no connected logs remain in the
+     * tree column, removes all natural (non-player-placed) leaves above.
+     */
+    private void removeOrphanedLeaves(Block origin) {
+        World world = origin.getWorld();
+        int baseX = origin.getX();
+        int baseZ = origin.getZ();
+        int startY = origin.getY();
+
+        // Scan the column and nearby columns for any remaining logs
+        // A tree trunk is typically 1 block wide (oak/birch) or 2x2 (large oak/spruce)
+        boolean hasLogsRemaining = false;
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                for (int y = startY; y < world.getMaxHeight(); y++) {
+                    Block check = world.getBlockAt(baseX + dx, y, baseZ + dz);
+                    if (Tag.LOGS.isTagged(check.getType()) && !isPlayerPlaced(check)) {
+                        hasLogsRemaining = true;
+                        break;
+                    }
+                }
+                if (hasLogsRemaining) break;
+            }
+            if (hasLogsRemaining) break;
+        }
+
+        // Also check slightly wider for large tree canopies
+        if (!hasLogsRemaining) {
+            // Wider scan — 5x5 area, check a few blocks above origin
+            for (int dx = -2; dx <= 2 && !hasLogsRemaining; dx++) {
+                for (int dz = -2; dz <= 2 && !hasLogsRemaining; dz++) {
+                    for (int y = startY; y < Math.min(startY + 30, world.getMaxHeight()); y++) {
+                        Block check = world.getBlockAt(baseX + dx, y, baseZ + dz);
+                        if (Tag.LOGS.isTagged(check.getType()) && !isPlayerPlaced(check)) {
+                            hasLogsRemaining = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (hasLogsRemaining) return; // Tree not fully cut — leave the leaves alone
+
+        // No logs remaining — remove all natural leaves in the canopy area
+        int maxLeafRadius = cfg().buffInt(51, "leaf-radius", 4);
+        int maxLeafHeight = cfg().buffInt(51, "leaf-height", 30);
+        int removed = 0;
+        int maxRemove = cfg().buffInt(51, "max-leaves", 100);
+
+        for (int dx = -maxLeafRadius; dx <= maxLeafRadius && removed < maxRemove; dx++) {
+            for (int dz = -maxLeafRadius; dz <= maxLeafRadius && removed < maxRemove; dz++) {
+                for (int dy = 0; dy < maxLeafHeight && removed < maxRemove; dy++) {
+                    Block leaf = world.getBlockAt(baseX + dx, startY + dy, baseZ + dz);
+                    if (Tag.LEAVES.isTagged(leaf.getType()) && !isPlayerPlaced(leaf)) {
+                        // Double-check: this leaf is not connected to any remaining log elsewhere
+                        leaf.breakNaturally();
+                        removed++;
+                    }
+                }
+            }
+        }
+    }
+
+    // Vein Miner uses the original BFS (ores are always natural)
     private void bfsBreak(Block start, Material target, int maxBlocks, Player player) {
         Set<Block> visited = new HashSet<>();
         Queue<Block> queue = new LinkedList<>();
@@ -202,9 +382,9 @@ public class BuffListeners implements Listener {
         }
 
         if (active(36) && cfg().buffBool(36, "fire-immune", true)
-            && (event.getCause() == EntityDamageEvent.DamageCause.FIRE
-            || event.getCause() == EntityDamageEvent.DamageCause.FIRE_TICK
-            || event.getCause() == EntityDamageEvent.DamageCause.LAVA)) {
+                && (event.getCause() == EntityDamageEvent.DamageCause.FIRE
+                || event.getCause() == EntityDamageEvent.DamageCause.FIRE_TICK
+                || event.getCause() == EntityDamageEvent.DamageCause.LAVA)) {
             event.setCancelled(true);
         }
 
@@ -263,7 +443,7 @@ public class BuffListeners implements Listener {
         }
     }
 
-    // 40: Teleporter — with cooldown message
+    // 40: Teleporter — real teleportation via raytrace (safe landing)
     @EventHandler
     public void onSneak(PlayerToggleSneakEvent event) {
         if (!active(40) || !event.isSneaking()) return;
@@ -280,9 +460,59 @@ public class BuffListeners implements Listener {
             return;
         }
 
-        Location target = player.getLocation().add(player.getLocation().getDirection().normalize().multiply(cfg().getTeleporterDistance()));
-        player.teleport(target);
+        int distance = cfg().getTeleporterDistance();
+        Location eyeLoc = player.getEyeLocation();
+        Vector direction = eyeLoc.getDirection().normalize();
+
+        // Raytrace to find a safe teleport destination
+        Location destination = null;
+        Location safeLanding = null;
+
+        // Step along the ray in 1-block increments
+        for (int step = 1; step <= distance; step++) {
+            Location checkLoc = eyeLoc.clone().add(direction.clone().multiply(step));
+
+            // Check if this block is passable (air/water/etc.)
+            Block feetBlock = checkLoc.getBlock();
+            Block headBlock = checkLoc.clone().add(0, 1, 0).getBlock();
+
+            boolean feetPassable = !feetBlock.getType().isSolid();
+            boolean headPassable = !headBlock.getType().isSolid();
+
+            if (!feetPassable || !headPassable) {
+                // Hit a wall — stop at the last safe position
+                break;
+            }
+
+            // Check if there's solid ground below the feet position
+            Block groundBlock = checkLoc.clone().add(0, -1, 0).getBlock();
+            if (groundBlock.getType().isSolid()) {
+                safeLanding = checkLoc.clone();
+            }
+
+            destination = checkLoc.clone();
+        }
+
+        // Prefer safe landing (standing on ground), otherwise last passable position
+        Location teleportTarget = safeLanding != null ? safeLanding : destination;
+
+        if (teleportTarget == null) {
+            // No valid teleport destination found (staring at a wall at point-blank)
+            player.sendMessage("\u00a78[\u00a76NomadSMP\u00a78] \u00a7cNo valid teleport destination.");
+            return;
+        }
+
+        // Set proper rotation and center the player in the block
+        teleportTarget.setX(teleportTarget.getBlockX() + 0.5);
+        teleportTarget.setZ(teleportTarget.getBlockZ() + 0.5);
+        teleportTarget.setYaw(player.getLocation().getYaw());
+        teleportTarget.setPitch(player.getLocation().getPitch());
+
+        player.teleport(teleportTarget);
         teleporterCooldowns.put(player.getUniqueId(), now);
+
+        // Visual feedback
+        player.getWorld().playSound(player.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 0.5f, 1.2f);
     }
 
     // 46: Alchemist
