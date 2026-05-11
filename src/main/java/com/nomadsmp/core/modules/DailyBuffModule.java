@@ -31,7 +31,7 @@ public class DailyBuffModule {
         "Sonic", "Rich", "Scavenger", "Glowstick", "Gardener",
         "Snowman", "Friendly", "Slimy", "Thor", "Teleporter",
         "Parachute", "Unstoppable", "Warrior", "Inertia", "Gravity Well",
-        "Alchemist", "Builder", "Double Jump", "Whale", "Pacifist"
+        "Alchemist", "Builder", "Double Jump", "Whale", "Pacifist", "Leaf Cut"
     };
 
     public static final String[] BUFF_DESCS = {
@@ -50,7 +50,7 @@ public class DailyBuffModule {
         "Slow Falling", "Wither/Slow/Blind immune", "Strength I",
         "Knockback immune", "Pull mobs toward you", "3x potion duration",
         "20% block refund", "Double jump in survival", "Infinite oxygen",
-        "Swords deal 0 damage + Regen IV"
+        "Swords deal 0 damage + Regen IV", "Auto-remove leaves from cut trees"
     };
 
     public DailyBuffModule(NomadCore plugin) { this.plugin = plugin; }
