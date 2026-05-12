@@ -1,6 +1,6 @@
 # 🏕️ NomadSMP-Core
 
-**A modular PaperMC plugin for curated SMP servers (≤20 players).**  
+**A modular PaperMC plugin for curated SMP servers (≤20 players).** 
 Keeps the server alive, social, fair, and fun — with zero admin babysitting.
 
 Built for **Paper 26.1+** (Java 25). Designed for small whitelisted communities that want structured progression, daily variety, and anti-cheat out of the box.
@@ -12,7 +12,7 @@ Built for **Paper 26.1+** (Java 25). Designed for small whitelisted communities 
 | Module | What It Does |
 |---|---|
 | 🏠 **Nomad System** | Weekly house migration via FAWE — no one stays in one base forever |
-| 🧪 **Daily Buffs** | 50 unique effects on a per-day schedule (fixed, random, or off) |
+| 🧪 **Daily Buffs** | 51 unique effects on a per-day schedule (fixed, random, or off) |
 | 🔒 **Progression Lock** | End lockdown, Netherite ban, command blocking — timed unlocks |
 | 🛡️ **Anti-Cheat** | Seed protection, ore obfuscation, structure seed scrambling |
 | 🤝 **Social** | World border, head drops, teleport disable, OP stripping |
@@ -38,7 +38,7 @@ Every module can be toggled independently in `config.yml`. All gameplay values a
 ./gradlew shadowJar
 ```
 
-Output: `build/libs/NomadSMP-Core-1.0.0.jar`
+Output: `build/libs/NomadSMP-Core-1.0.2.jar`
 
 Drop the JAR into your server's `plugins/` folder. Default config is generated on first run.
 
@@ -66,13 +66,13 @@ Tab completion is available for all subcommands, days, and modes.
 
 ## 🧪 Daily Buffs — Full Reference
 
-50 unique buffs, each with its own config section. Every buff can be individually **enabled/disabled** and has **tunable parameters** — amplifier levels, multipliers, ranges, chances, etc.
+51 unique buffs, each with its own config section. Every buff can be individually **enabled/disabled** and has **tunable parameters** — amplifier levels, multipliers, ranges, chances, etc.
 
 ### How It Works
 
 - **Per-day schedule**: Each day of the week can be `fixed`, `random`, or `off`
   - `fixed` → always applies specific buff IDs (e.g. Monday = Titanium)
-  - `random` → picks N buffs from a configurable pool (e.g. Saturday = random from all 50)
+  - `random` → picks N buffs from a configurable pool (e.g. Saturday = random from all 51)
   - `off` → no buff that day
 - **Rollover**: Automatic midnight check swaps buffs at 00:00
 - **Duration**: Set `duration-hours` to limit how long buffs last (0 = all day)
@@ -80,7 +80,7 @@ Tab completion is available for all subcommands, days, and modes.
 - **Persistence**: Buff state survives server restarts
 - **Broadcast**: All online players are notified on buff changes and when joining
 
-### All 50 Buffs
+### All 51 Buffs
 
 | # | Name | Effect | Key Config |
 |---|---|---|---|
@@ -134,8 +134,9 @@ Tab completion is available for all subcommands, days, and modes.
 | 48 | **Double Jump** | Double jump in survival | `velocity` |
 | 49 | **Whale** | Infinite oxygen underwater | `infinite-oxygen` |
 | 50 | **Pacifist** | Swords deal 0 damage + Regen IV | `regen-amplifier` |
+| 51 | **Leaf Cut** | Break all connected leaves at once | `max-leaves` |
 
-> **Potion amplifiers are 0-indexed!** `0` = Level I, `1` = Level II, etc.  
+> **Potion amplifiers are 0-indexed!** `0` = Level I, `1` = Level II, etc. 
 > Speed buffs use `walkSpeed` attribute — **no FOV zoom**.
 
 ---
@@ -211,10 +212,12 @@ All settings live in `plugins/NomadSMP-Core/config.yml`. Every module, sub-featu
 
 Key config sections:
 - `nomad-system` — migration schedule, house radius, safety checks
-- `daily-buffs` — schedule, duration, stacking, per-buff tuning (50 entries)
+- `daily-buffs` — schedule, duration, stacking, per-buff tuning (51 entries)
 - `progression-lock` — end unlock timer, Netherite bans, command blocking
 - `anti-cheat` — seed protection, ore obfuscation, structure scrambling
 - `social` — world border, teleport rules, head drops, OP stripping
+
+Config is **auto-migrated** on updates — new keys from the default config are merged into your existing config without overwriting custom values. A backup of the previous config is saved as `config.yml.bak`.
 
 Use `/nomad reload` to apply changes without restarting the server.
 
@@ -224,27 +227,28 @@ Use `/nomad reload` to apply changes without restarting the server.
 
 ```
 com.nomadsmp.core/
-├── NomadCore.java              # Main plugin class
+├── NomadCore.java            # Main plugin class
 ├── commands/
-│   └── NomadCommand.java       # All /nomad subcommands + tab completion
+│   └── NomadCommand.java     # All /nomad subcommands + tab completion
 ├── config/
-│   └── ConfigManager.java      # Config parsing & defaults
+│   ├── ConfigManager.java    # Config parsing & defaults
+│   └── ConfigMigrator.java   # Auto-migration of config on version changes
 ├── listeners/
-│   ├── BuffListeners.java      # Buff effect listeners
+│   ├── BuffListeners.java    # Buff effect listeners
 │   ├── ProgressionListeners.java
 │   ├── AntiCheatListeners.java
 │   └── SocialListeners.java
 ├── modules/
-│   ├── DailyBuffModule.java    # Buff scheduling & rollover
-│   ├── BuffApplier.java        # Buff effect application/removal
-│   ├── NomadModule.java        # House migration logic
+│   ├── DailyBuffModule.java  # Buff scheduling & rollover
+│   ├── BuffApplier.java      # Buff effect application/removal
+│   ├── NomadModule.java      # House migration logic
 │   ├── ProgressionLockModule.java
 │   ├── AntiCheatModule.java
 │   └── SocialModule.java
 └── utils/
-    ├── HomeStorage.java        # Per-player home persistence
-    ├── StatsManager.java       # Server statistics tracking
-    └── BuffStateStorage.java   # Buff state persistence across restarts
+    ├── HomeStorage.java      # Per-player home persistence
+    ├── StatsManager.java     # Server statistics tracking
+    └── BuffStateStorage.java # Buff state persistence across restarts
 ```
 
 ---
