@@ -81,7 +81,7 @@ public class ConfigManager {
         "35-gardener", "36-snowman", "37-friendly", "38-slimy", "39-thor",
         "40-teleporter", "41-parachute", "42-unstoppable", "43-warrior", "44-inertia",
         "45-gravity-well", "46-alchemist", "47-builder", "48-double-jump", "49-whale",
-        "50-pacifist"
+        "50-pacifist", "51-leaf-cut"
     };
 
     public enum BuffMode { FIXED, RANDOM, OFF }
@@ -142,6 +142,7 @@ public class ConfigManager {
     public double getBuilderRefundChance() { return buffDouble(47, "refund-chance", 0.2); }
     public double getDoubleJumpVelocity() { return buffDouble(48, "velocity", 0.8); }
     public double getSlimyBounceMultiplier() { return buffDouble(38, "bounce-multiplier", 0.05); }
+    public int getLeafCutMaxLeaves() { return buffInt(51, "max-leaves", 64); }
 
     // ─── Load all values ───
     private void loadValues() {
