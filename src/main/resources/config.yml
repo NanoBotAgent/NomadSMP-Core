@@ -210,12 +210,12 @@ daily-buffs:
     49-whale:
       enabled: true
       infinite-oxygen: true # Never lose air underwater
- 50-pacifist:
-    enabled: true
-    regen-amplifier: 3 # 0=Regen I, 1=Regen II, 2=Regen III, 3=Regen IV
-  51-leaf-cut:
-    enabled: true
-    max-leaves: 64 # Max leaves to auto-remove per tree chop
+    50-pacifist:
+      enabled: true
+      regen-amplifier: 3 # 0=Regen I, 1=Regen II, 2=Regen III, 3=Regen IV
+    51-leaf-cut:
+      enabled: true
+      max-leaves: 64 # Max leaves to auto-remove per tree chop
 
 progression-lock:
   enabled: true
