@@ -1,27 +1,27 @@
-# 🏕️ NomadSMP-Core
+# NomadSMP-Core
 
-**A modular PaperMC plugin for curated SMP servers (≤20 players).** 
+**A modular PaperMC plugin for curated SMP servers (<=20 players).**
 Keeps the server alive, social, fair, and fun — with zero admin babysitting.
 
 Built for **Paper 26.1+** (Java 25). Designed for small whitelisted communities that want structured progression, daily variety, and anti-cheat out of the box.
 
 ---
 
-## ✨ Features at a Glance
+## Features at a Glance
 
 | Module | What It Does |
 |---|---|
-| 🏠 **Nomad System** | Weekly house migration via FAWE — no one stays in one base forever |
-| 🧪 **Daily Buffs** | 51 unique effects on a per-day schedule (fixed, random, or off) |
-| 🔒 **Progression Lock** | End lockdown, Netherite ban, command blocking — timed unlocks |
-| 🛡️ **Anti-Cheat** | Seed protection, ore obfuscation, structure seed scrambling |
-| 🤝 **Social** | World border, head drops, teleport disable, OP stripping |
+| **Nomad System** | Weekly house migration via FAWE — no one stays in one base forever |
+| **Daily Buffs** | 51 unique effects on a per-day schedule (fixed, random, or off) |
+| **Progression Lock** | End lockdown, Netherite ban, command blocking — timed unlocks |
+| **Anti-Cheat** | Seed protection, ore obfuscation, structure seed scrambling |
+| **Social** | World border, head drops, teleport disable, OP stripping |
 
 Every module can be toggled independently in `config.yml`. All gameplay values are configurable — nothing is hardcoded.
 
 ---
 
-## 📦 Requirements
+## Requirements
 
 - **PaperMC** 26.1+ (Java 25)
 - **FastAsyncWorldEdit (FAWE)** 2.15.1+ or **WorldEdit** 7.4.3 (required for Nomad house migration)
@@ -32,7 +32,7 @@ Every module can be toggled independently in `config.yml`. All gameplay values a
 
 ---
 
-## 🔨 Build
+## Build
 
 ```bash
 ./gradlew shadowJar
@@ -44,7 +44,7 @@ Drop the JAR into your server's `plugins/` folder. Default config is generated o
 
 ---
 
-## ⌨️ Commands
+## Commands
 
 All commands are under `/nomad`:
 
@@ -64,16 +64,16 @@ Tab completion is available for all subcommands, days, and modes.
 
 ---
 
-## 🧪 Daily Buffs — Full Reference
+## Daily Buffs — Full Reference
 
 51 unique buffs, each with its own config section. Every buff can be individually **enabled/disabled** and has **tunable parameters** — amplifier levels, multipliers, ranges, chances, etc.
 
 ### How It Works
 
 - **Per-day schedule**: Each day of the week can be `fixed`, `random`, or `off`
-  - `fixed` → always applies specific buff IDs (e.g. Monday = Titanium)
-  - `random` → picks N buffs from a configurable pool (e.g. Saturday = random from all 51)
-  - `off` → no buff that day
+  - `fixed` — always applies specific buff IDs (e.g. Monday = Titanium)
+  - `random` — picks N buffs from a configurable pool (e.g. Saturday = random from all 51)
+  - `off` — no buff that day
 - **Rollover**: Automatic midnight check swaps buffs at 00:00
 - **Duration**: Set `duration-hours` to limit how long buffs last (0 = all day)
 - **Stacking**: Configure how same-type effects combine (`highest`, `additive`, `replace`)
@@ -91,7 +91,7 @@ Tab completion is available for all subcommands, days, and modes.
 | 5 | **Iron Lung** | Water Breathing | `amplifier` |
 | 6 | **Pyro** | Fire Resistance | `amplifier` |
 | 7 | **Night Owl** | Night Vision | `amplifier` |
-| 8 | **Looter** | Double mob drops | `drop-multiplier` (2=2×, 3=3×) |
+| 8 | **Looter** | Double mob drops | `drop-multiplier` (2=2x, 3=3x) |
 | 9 | **Bountiful Harvest** | Double crop growth | `growth-boost` (auto bone-meal) |
 | 10 | **Lucky Fisher** | Instant fishing | — |
 | 11 | **Magnet** | Auto-pickup items | `range`, `pull-strength` |
@@ -106,7 +106,7 @@ Tab completion is available for all subcommands, days, and modes.
 | 20 | **XP Junkie** | Double XP | `xp-multiplier` |
 | 21 | **Merchant** | Villager trade discounts | `discount` (0.5 = 50% off) |
 | 22 | **Tank** | Resistance | `resistance-amplifier` |
-| 23 | **Glass Cannon** | 2× damage dealt & taken | `damage-dealt-multiplier`, `damage-taken-multiplier` |
+| 23 | **Glass Cannon** | 2x damage dealt & taken | `damage-dealt-multiplier`, `damage-taken-multiplier` |
 | 24 | **Archer** | Free arrows | `free-arrows` |
 | 25 | **Librarian** | 1-level enchanting | `enchant-cost` |
 | 26 | **Ninja** | Invisibility + silent | `amplifier` |
@@ -118,7 +118,7 @@ Tab completion is available for all subcommands, days, and modes.
 | 32 | **Rich** | Gold nugget drops | `nugget-chance` (0.0–1.0) |
 | 33 | **Scavenger** | Bonus loot from grass | `drop-chance`, `loot` list |
 | 34 | **Glowstick** | Glowing effect | `amplifier` |
-| 35 | **Gardener** | 3×3 bone meal | `bone-meal-radius` (1=3×3, 2=5×5) |
+| 35 | **Gardener** | 3x3 bone meal | `bone-meal-radius` (1=3x3, 2=5x5) |
 | 36 | **Snowman** | Snow trail + fire immune | `snow-trail`, `fire-immune` |
 | 37 | **Friendly** | Peaceful mob attraction | `attraction-range` |
 | 38 | **Slimy** | Bouncy fall + launch | `bounce-multiplier` |
@@ -129,19 +129,19 @@ Tab completion is available for all subcommands, days, and modes.
 | 43 | **Warrior** | Strength | `strength-amplifier` |
 | 44 | **Inertia** | Knockback immune above threshold | `velocity-threshold` |
 | 45 | **Gravity Well** | Pull mobs toward you | `range`, `pull-strength` |
-| 46 | **Alchemist** | 3× potion duration | `duration-multiplier` |
+| 46 | **Alchemist** | 3x potion duration | `duration-multiplier` |
 | 47 | **Builder** | 20% block refund chance | `refund-chance` (0.0–1.0) |
 | 48 | **Double Jump** | Double jump in survival | `velocity` |
 | 49 | **Whale** | Infinite oxygen underwater | `infinite-oxygen` |
 | 50 | **Pacifist** | Swords deal 0 damage + Regen IV | `regen-amplifier` |
 | 51 | **Leaf Cut** | Break all connected leaves at once | `max-leaves` |
 
-> **Potion amplifiers are 0-indexed!** `0` = Level I, `1` = Level II, etc. 
+> **Potion amplifiers are 0-indexed!** `0` = Level I, `1` = Level II, etc.
 > Speed buffs use `walkSpeed` attribute — **no FOV zoom**.
 
 ---
 
-## 🏠 Nomad System
+## Nomad System
 
 Forces weekly house migration to keep the map fresh and prevent mega-base stagnation.
 
@@ -165,7 +165,7 @@ nomad-system:
 
 ---
 
-## 🔒 Progression Lock
+## Progression Lock
 
 Prevents speedrunning and keeps late-game content locked until the server has aged.
 
@@ -179,7 +179,7 @@ Prevents speedrunning and keeps late-game content locked until the server has ag
 
 ---
 
-## 🛡️ Anti-Cheat
+## Anti-Cheat
 
 Built-in protection without needing separate anti-X-ray plugins.
 
@@ -191,7 +191,7 @@ Built-in protection without needing separate anti-X-ray plugins.
 
 ---
 
-## 🤝 Social
+## Social
 
 Community-shaping features for small servers.
 
@@ -206,7 +206,7 @@ Community-shaping features for small servers.
 
 ---
 
-## ⚙️ Configuration
+## Configuration
 
 All settings live in `plugins/NomadSMP-Core/config.yml`. Every module, sub-feature, and gameplay value is configurable — no hardcoded numbers.
 
@@ -223,7 +223,7 @@ Use `/nomad reload` to apply changes without restarting the server.
 
 ---
 
-## 🏗️ Project Structure
+## Project Structure
 
 ```
 com.nomadsmp.core/
@@ -253,6 +253,6 @@ com.nomadsmp.core/
 
 ---
 
-## 📄 License
+## License
 
 MIT
