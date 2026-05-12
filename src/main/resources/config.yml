@@ -3,6 +3,13 @@
 # /nomad reload to apply changes without restart
 # ─────────────────────────────────────────────
 #
+# config-version is managed by the plugin — do NOT edit.
+# It tracks config schema versioning so new keys
+# can be auto-merged when you update the plugin.
+# ─────────────────────────────────────────────
+
+config-version: 2
+#
 # NOTE: Potion effect amplifiers are 0-indexed!
 # 0 = Level I (e.g. Haste I, Resistance I)
 # 1 = Level II (e.g. Haste II, Resistance II)
@@ -203,9 +210,12 @@ daily-buffs:
     49-whale:
       enabled: true
       infinite-oxygen: true # Never lose air underwater
-    50-pacifist:
-      enabled: true
-      regen-amplifier: 3 # 0=Regen I, 1=Regen II, 2=Regen III, 3=Regen IV
+ 50-pacifist:
+    enabled: true
+    regen-amplifier: 3 # 0=Regen I, 1=Regen II, 2=Regen III, 3=Regen IV
+  51-leaf-cut:
+    enabled: true
+    max-leaves: 64 # Max leaves to auto-remove per tree chop
 
 progression-lock:
   enabled: true
